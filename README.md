@@ -28,7 +28,7 @@
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/anasrawuthar-bit/zynsolar.git
+git clone https://github.com/botgiptb/zynsolar.git
 cd zynsolar
 ```
 
