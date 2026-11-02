@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Session Verification Expired | Solar CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-xl-4 py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-sm rounded-4 text-center p-4 p-md-5 bg-white">
+        <!-- Error Badge & Icon -->
+        <div class="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-circle" 
+             style="width: 88px; height: 88px; background: #fff7ed; border: 2px solid #fed7aa;">
+          <i class="bi bi-shield-exclamation text-warning fs-1"></i>
+        </div>
+
+        <div class="badge bg-warning-subtle text-dark border border-warning-subtle px-3 py-1.5 rounded-pill font-monospace mx-auto mb-3" style="font-size: 0.8rem; font-weight: 600;">
+          SECURITY VERIFICATION &bull; CSRF
+        </div>
+
+        <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.02em;">Session Token Expired</h3>
+        <p class="text-muted mb-4 small" style="line-height: 1.6;">
+          Your browser's security token expired or changed while this form was open. This occurs when you leave a tab idle or open the CRM in multiple windows.
+        </p>
+
+        <div class="alert alert-light border small text-start text-muted mb-4 py-2.5 px-3 rounded-3" style="font-size: 0.8rem;">
+          <i class="bi bi-shield-check text-success me-1"></i> Don't worry, your connection is secure. Simply refresh the page to renew your security session token and submit your data again.
+        </div>
+
+        <!-- Helpful Navigation Actions -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 pt-2 border-top">
+          <button type="button" class="btn btn-solar-primary px-3 py-2 fw-semibold" onclick="window.location.reload();">
+            <i class="bi bi-arrow-clockwise me-1.5"></i> Reload Page & Retry
+          </button>
+          <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary px-3 py-2 fw-medium">
+            <i class="bi bi-grid-1x2-fill me-1.5"></i> Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

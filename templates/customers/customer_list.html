@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{% if is_credit_view %}Customer Credit & Receivables{% else %}Customer Directory{% endif %} | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <span class="text-dark fw-bold text-truncate">Customers</span>
+  <span class="text-muted opacity-50 d-none d-sm-inline">&bull;</span>
+  <span class="text-muted small d-none d-sm-inline" style="font-size: 0.78rem;">
+    {% if is_credit_view %}Credit &amp; Receivables Dues{% else %}Directory &amp; Accounts{% endif %}
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Top Segmented Navigation: All Customers vs Credit & Dues -->
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <div class="bg-light p-1 rounded-pill border d-inline-flex gap-1" role="tablist">
+      <a href="{% url 'customers:list' %}" class="btn btn-sm rounded-pill fw-semibold border-0 px-3 py-1.5 d-inline-flex align-items-center gap-1.5 {% if not is_credit_view %}bg-dark text-white shadow-2xs{% else %}text-secondary{% endif %}" style="font-size: 0.8rem;">
+        <i class="bi bi-people-fill"></i>
+        <span>All Customers</span>
+        <span class="badge rounded-pill {% if not is_credit_view %}bg-white text-dark{% else %}bg-secondary-subtle text-secondary{% endif %} ms-0.5" style="font-size: 0.68rem;">{{ total_count }}</span>
+      </a>
+      <a href="{% url 'customers:list' %}?view=credit" class="btn btn-sm rounded-pill fw-semibold border-0 px-3 py-1.5 d-inline-flex align-items-center gap-1.5 {% if is_credit_view %}bg-dark text-white shadow-2xs{% else %}text-secondary{% endif %}" style="font-size: 0.8rem;">
+        <i class="bi bi-cash-coin text-danger"></i>
+        <span>Credit &amp; Outstanding Dues</span>
+        {% if pending_payments_count > 0 %}
+          <span class="badge rounded-pill bg-danger text-white ms-0.5" style="font-size: 0.68rem;">{{ pending_payments_count }}</span>
+        {% endif %}
+      </a>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{% url 'customers:create' %}" class="btn btn-sm btn-solar-primary d-inline-flex align-items-center gap-1.5 shadow-xs px-3">
+        <i class="bi bi-plus-lg"></i>
+        <span>Add Customer</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Top KPI Metric Cards (Standardized SaaS Size & Clean Count Display) -->
+  <div class="row g-3 mb-3">
+    <!-- Card 1: Total Customers -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Total Customers</span>
+          <div class="fs-4 fw-bold font-heading text-dark mt-1">{{ total_count|default:"0"|intcomma }}</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>Registered in CRM
+          </span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+          <i class="bi bi-people-fill fs-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Active Accounts -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Active Accounts</span>
+          <div class="fs-4 fw-bold font-heading text-dark mt-1">{{ active_count|default:"0"|intcomma }}</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">
+            <i class="bi bi-person-check-fill text-primary me-1"></i>Active clients
+          </span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">
+          <i class="bi bi-person-check-fill fs-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Total Outstanding Credit (Clickable to Credit view) -->
+    <div class="col-sm-6 col-xl-3">
+      <a href="{% url 'customers:list' %}?view=credit" class="text-decoration-none">
+        <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100 {% if is_credit_view %}border-danger border-2{% endif %}">
+          <div>
+            <span class="text-danger small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Outstanding Dues</span>
+            <div class="fs-5 fw-bold font-heading text-danger mt-1">₹{{ total_pending_amount|floatformat:0|intcomma }}</div>
+            <span class="text-muted small" style="font-size: 0.72rem;">
+              <i class="bi bi-exclamation-circle-fill text-danger me-1"></i>{{ pending_payments_count }} with pending due
+            </span>
+          </div>
+          <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+            <i class="bi bi-cash-stack fs-5"></i>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Card 4: Account Mix -->
+    <div class="col-sm-6 col-xl-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Account Mix</span>
+          <div class="fs-6 fw-bold font-heading text-dark mt-1">
+            <span class="text-primary">{{ individual_count }} Res</span> &bull; 
+            <span style="color:#7c3aed;">{{ business_count }} Comm</span>
+          </div>
+          <span class="text-muted small" style="font-size: 0.72rem;">Rooftop &amp; Commercial</span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe;">
+          <i class="bi bi-pie-chart-fill fs-5"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card-saas p-2.5 mb-3">
+    <form method="get" class="row g-2 align-items-center">
+      {% if is_credit_view %}
+        <input type="hidden" name="view" value="credit">
+      {% endif %}
+
+      <!-- Search Input -->
+      <div class="col-lg-3 col-md-12">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0 text-muted ps-2.5"><i class="bi bi-search"></i></span>
+          <input type="text" name="q" value="{{ current_query }}" class="form-control border-start-0 ps-1" placeholder="Search by name, phone, customer ID, city...">
+        </div>
+      </div>
+
+      <!-- City Filter -->
+      <div class="col-lg-2 col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-geo-alt"></i></span>
+          <select name="city" class="form-select border-start-0 ps-1">
+            <option value="">All Cities</option>
+            {% for c in cities %}
+              {% if c %}
+                <option value="{{ c }}" {% if current_city == c %}selected{% endif %}>{{ c|title }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Customer Type Filter -->
+      <div class="col-lg-2 col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-layers"></i></span>
+          <select name="customer_type" class="form-select border-start-0 ps-1">
+            <option value="">All Account Types</option>
+            <option value="INDIVIDUAL" {% if current_type == 'INDIVIDUAL' %}selected{% endif %}>Residential</option>
+            <option value="BUSINESS" {% if current_type == 'BUSINESS' %}selected{% endif %}>Commercial</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="col-lg-2 col-md-4">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-funnel"></i></span>
+          <select name="status" class="form-select border-start-0 ps-1">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE" {% if current_status == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="ARCHIVED" {% if current_status == 'ARCHIVED' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Payment Status Filter (hidden or active) -->
+      {% if not is_credit_view %}
+        <div class="col-lg-2 col-md-4">
+          <div class="input-group input-group-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-wallet2"></i></span>
+            <select name="payment_status" class="form-select border-start-0 ps-1">
+              <option value="">All Payments</option>
+              <option value="pending" {% if current_payment_status == 'pending' %}selected{% endif %}>Pending Due (&gt;₹0)</option>
+              <option value="settled" {% if current_payment_status == 'settled' %}selected{% endif %}>Settled / Zero Due</option>
+            </select>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Submit & Reset -->
+      <div class="{% if is_credit_view %}col-lg-3{% else %}col-lg-1{% endif %} col-md-12 d-flex gap-1">
+        <button type="submit" class="btn btn-sm btn-solar-primary w-100 d-inline-flex align-items-center justify-content-center gap-1">
+          <i class="bi bi-funnel-fill"></i> Filter
+        </button>
+        {% if current_query or current_city or current_type or current_status or current_payment_status %}
+          <a href="{% if is_credit_view %}?view=credit{% else %}{% url 'customers:list' %}{% endif %}" class="btn btn-sm btn-light border text-secondary shadow-2xs" title="Reset Filters"><i class="bi bi-arrow-counterclockwise"></i></a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Customers Table Card -->
+  <div class="card-saas mb-4">
+    <div class="card-header-clean p-3 d-flex flex-wrap align-items-center justify-content-between gap-2 border-bottom">
+      <div>
+        <h6 class="mb-0 fw-bold font-heading text-dark">
+          {% if is_credit_view %}
+            <i class="bi bi-cash-stack text-danger me-1.5"></i>Customers with Outstanding Credit / Dues
+          {% else %}
+            Customer Directory
+          {% endif %}
+        </h6>
+        <small class="text-muted" style="font-size: 0.74rem;">
+          {% if is_credit_view %}
+            Showing {{ paginator.count }} customer{{ paginator.count|pluralize }} with pending balances
+          {% else %}
+            Showing {{ page_obj.start_index|default:0 }} to {{ page_obj.end_index|default:0 }} of {{ paginator.count }} customers
+          {% endif %}
+        </small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        {% if is_credit_view %}
+          <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Zero-Balance Accounts Hidden
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card-body-clean p-0">
+      <div class="table-responsive">
+        <table class="table table-saas align-middle mb-0">
+          <thead class="table-light text-secondary text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">
+            <tr>
+              <th class="ps-3">CUSTOMER ID</th>
+              <th>CLIENT NAME</th>
+              <th>PHONE</th>
+              <th>LOCATION</th>
+              <th>TYPE</th>
+              <th>ORDERS</th>
+              {% if is_credit_view %}
+                <th>TOTAL VALUE</th>
+                <th>OUTSTANDING CREDIT DUE</th>
+              {% else %}
+                <th>STATUS</th>
+              {% endif %}
+              <th class="text-end pe-3">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for customer in customers %}
+              <tr>
+                <td class="ps-3">
+                  <span class="fw-semibold text-secondary small bg-light px-2 py-0.5 rounded-2 border" style="font-size: 0.72rem; letter-spacing: 0.02em;">
+                    #{{ customer.customer_id }}
+                  </span>
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    {% cycle '#dcfce7' '#ffedd5' '#f3e8ff' '#dbeafe' '#ccfbf1' as bg_color silent %}
+                    {% cycle '#15803d' '#c2410c' '#7e22ce' '#1d4ed8' '#0f766e' as text_color silent %}
+                    <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-2xs" style="width: 30px; height: 30px; font-size: 0.76rem; background: {{ bg_color }}; color: {{ text_color }}; flex-shrink: 0;">
+                      {{ customer.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                      <a href="{{ customer.get_absolute_url }}" class="fw-bold text-dark text-decoration-none" style="font-size: 0.85rem;">
+                        {{ customer.name }}
+                      </a>
+                      {% if not is_credit_view and customer.pending_balance and customer.pending_balance > 0 %}
+                        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle ms-1.5 fw-semibold" style="font-size: 0.68rem; padding: 0.15rem 0.5rem;">
+                          Due: ₹{{ customer.pending_balance|floatformat:0|intcomma }}
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <a href="tel:{{ customer.phone }}" class="text-decoration-none text-dark small d-inline-flex align-items-center gap-1.5">
+                    <i class="bi bi-telephone text-success"></i>
+                    <span class="fw-medium">{{ customer.phone }}</span>
+                  </a>
+                </td>
+                <td>
+                  <span class="d-inline-flex align-items-center gap-1 text-secondary small">
+                    <i class="bi bi-geo-alt text-muted"></i>
+                    <span>{{ customer.city|default:"Kerala" }}, {{ customer.state|default:"India" }}</span>
+                  </span>
+                </td>
+                <td>
+                  {% if customer.customer_type == 'BUSINESS' %}
+                    <span class="badge rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" style="background: #ffedd5; color: #c2410c; font-size: 0.7rem; border: 1px solid #fed7aa;">
+                      <i class="bi bi-building"></i> Commercial
+                    </span>
+                  {% else %}
+                    <span class="badge rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1" style="background: #ecfdf5; color: #047857; font-size: 0.7rem; border: 1px solid #a7f3d0;">
+                      <i class="bi bi-house"></i> Residential
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-light text-secondary border fw-semibold rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">
+                    {{ customer.booking_count|default:"0" }} order{{ customer.booking_count|pluralize }}
+                  </span>
+                </td>
+
+                {% if is_credit_view %}
+                  <td>
+                    <span class="fw-bold text-dark small">
+                      ₹{{ customer.total_spent_val|floatformat:0|intcomma|default:"0" }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-1.5">
+                      <span class="badge bg-danger text-white fw-bold px-2.5 py-1 rounded-pill" style="font-size: 0.78rem;">
+                        ₹{{ customer.pending_balance|floatformat:0|intcomma }}
+                      </span>
+                    </div>
+                  </td>
+                {% else %}
+                  <td>
+                    {% if customer.status == 'ACTIVE' %}
+                      <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1" style="font-size: 0.7rem;">
+                        <span style="width: 5px; height: 5px; border-radius: 50%; background: #16a34a; display: inline-block;"></span> Active
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle fw-semibold rounded-pill px-2.5 py-1" style="font-size: 0.7rem;">
+                        Archived
+                      </span>
+                    {% endif %}
+                  </td>
+                {% endif %}
+
+                <td class="text-end pe-3">
+                  <div class="d-flex align-items-center justify-content-end gap-1">
+                    {% if customer.pending_balance and customer.pending_balance > 0 %}
+                      <a href="https://wa.me/{{ customer.whatsapp_phone }}?text=Dear%20{{ customer.name|urlencode }},%20this%20is%20a%20courtesy%20reminder%20from%20zynsolar%20regarding%20your%20project%20outstanding%20balance%20of%20INR%20{{ customer.pending_balance|floatformat:0 }}."
+                         target="_blank"
+                         class="btn btn-sm btn-icon rounded-circle border-0 text-success bg-success-subtle shadow-2xs"
+                         style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;"
+                         title="Send WhatsApp Payment Reminder">
+                        <i class="bi bi-whatsapp"></i>
+                      </a>
+                    {% endif %}
+                    <a href="{{ customer.get_absolute_url }}" 
+                       class="btn btn-sm btn-icon rounded-circle border-0 text-primary bg-primary-subtle shadow-2xs" 
+                       style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;"
+                       title="View Customer Profile">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'customers:edit' customer.pk %}" 
+                       class="btn btn-sm btn-icon rounded-circle border-0 text-secondary bg-light shadow-2xs" 
+                       style="width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center;"
+                       title="Edit Customer">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="{% if is_credit_view %}8{% else %}8{% endif %}" class="text-center py-5">
+                  {% if is_credit_view %}
+                    <div class="rounded-circle bg-success-subtle text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 58px; height: 58px;">
+                      <i class="bi bi-check-circle-fill fs-2"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">Zero Outstanding Credit Dues!</h6>
+                    <p class="text-muted small mb-3">All customers have cleared their payment balances. No pending credit accounts found.</p>
+                    <a href="{% url 'customers:list' %}" class="btn btn-sm btn-solar-outline rounded-pill px-3">
+                      <i class="bi bi-arrow-left me-1"></i> View All Customers
+                    </a>
+                  {% else %}
+                    <div class="text-muted mb-2"><i class="bi bi-people fs-1"></i></div>
+                    <h6 class="fw-bold text-dark">No Customers Found</h6>
+                    <p class="text-muted small mb-3">No customer records matching your filter criteria.</p>
+                    <a href="{% url 'customers:create' %}" class="btn btn-sm btn-solar-primary rounded-pill px-3">
+                      <i class="bi bi-plus-lg me-1"></i> Add First Customer
+                    </a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if is_paginated %}
+        <div class="p-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <small class="text-muted" style="font-size: 0.74rem;">
+            Page {{ page_obj.number }} of {{ paginator.num_pages }} (Total {{ paginator.count }} customers)
+          </small>
+          <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link rounded-start-pill" href="?{% if is_credit_view %}view=credit&{% endif %}page={{ page_obj.previous_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}">Previous</a>
+              </li>
+            {% endif %}
+            <li class="page-item active">
+              <span class="page-link">{{ page_obj.number }}</span>
+            </li>
+            {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link rounded-end-pill" href="?{% if is_credit_view %}view=credit&{% endif %}page={{ page_obj.next_page_number }}{% if current_query %}&q={{ current_query }}{% endif %}{% if current_city %}&city={{ current_city }}{% endif %}">Next</a>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

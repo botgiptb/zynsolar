@@ -1,0 +1,2858 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | SolarPro{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.85rem;">
+  <a href="{% url 'bookings:list' %}" class="text-secondary text-decoration-none fw-medium">Solar Orders</a>
+  <span class="text-muted opacity-50">/</span>
+  <span class="text-dark fw-bold text-truncate">{% if is_edit %}Edit {{ object.booking_ref }}{% else %}New Booking{% endif %}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2 px-md-4">
+
+
+  <form method="post" id="solarBookingForm" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    {% if form.errors %}
+      <div class="alert alert-danger mb-4 shadow-sm border-0 d-flex align-items-start rounded-3">
+        <i class="bi bi-exclamation-triangle-fill fs-5 me-3 text-danger mt-1"></i>
+        <div>
+          <strong class="d-block mb-1">Please correct the highlighted issues:</strong>
+          <ul class="mb-0 ps-3 small">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="row g-4">
+      <!-- Main Form Details (Full Width) -->
+      <div class="col-12">
+
+        <!-- Hero Card -->
+        <div class="card border rounded-4 shadow-sm p-4 mb-4 bg-white position-relative overflow-hidden">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <a href="{% if is_edit %}{{ object.get_absolute_url }}{% else %}{% url 'bookings:list' %}{% endif %}" class="btn btn-sm btn-back-hero shadow-xs rounded-3 d-inline-flex align-items-center gap-1.5 px-3 py-2 fw-semibold me-1" id="heroBackBtn" title="Back to Bookings List">
+                <i class="bi bi-arrow-left"></i>
+                <span>Back to Bookings List</span>
+              </a>
+              <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: #dcfce7; color: #059669; flex-shrink: 0;">
+                <i class="bi bi-house-door-fill fs-4"></i>
+              </div>
+              <div>
+                <h4 class="fw-bold text-dark mb-1">{{ title }}</h4>
+                <p class="text-muted small mb-0">Specify technical solar hardware, financial terms, and installation schedules.</p>
+              </div>
+            </div>
+
+            <!-- Modern Solar Rooftop Illustration with Badge -->
+            <div class="d-flex align-items-center gap-3 position-relative">
+              <span class="badge rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" style="background: #ffffff; color: #059669; border: 1px solid #dcfce7; font-size: 0.82rem;">
+                <i class="bi bi-box-seam-fill text-success"></i>
+                <span>New Solar Order</span>
+              </span>
+              <!-- Solar Roof House Graphic SVG -->
+              <svg width="105" height="65" viewBox="0 0 105 65" fill="none" class="d-none d-sm-block">
+                <!-- Sun -->
+                <circle cx="85" cy="15" r="7" fill="#fde047" opacity="0.9"/>
+                <path d="M85 4 V6 M85 24 V26 M74 15 H76 M94 15 H96" stroke="#facc15" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Trees -->
+                <circle cx="18" cy="42" r="12" fill="#86efac" opacity="0.7"/>
+                <circle cx="92" cy="45" r="10" fill="#86efac" opacity="0.7"/>
+                <!-- House Body -->
+                <rect x="25" y="32" width="55" height="30" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+                <!-- Roof with Solar Panels -->
+                <polygon points="52,14 16,34 88,34" fill="#047857"/>
+                <polygon points="52,16 26,32 78,32" fill="#065f46"/>
+                <!-- Solar Panels on Roof -->
+                <g transform="translate(32, 20)">
+                  <rect x="0" y="0" width="16" height="10" fill="#1e3a5f" rx="1" stroke="#38bdf8" stroke-width="0.7"/>
+                  <line x1="8" y1="0" x2="8" y2="10" stroke="#38bdf8" stroke-width="0.5"/>
+                  <rect x="20" y="0" width="16" height="10" fill="#1e3a5f" rx="1" stroke="#38bdf8" stroke-width="0.7"/>
+                  <line x1="28" y1="0" x2="28" y2="10" stroke="#38bdf8" stroke-width="0.5"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Customer Selection -->
+        <div class="card-saas mb-4" id="step-customer" style="overflow: visible !important; position: relative; z-index: 45;">
+          <div class="card-header-clean d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="rounded-1 d-flex align-items-center justify-content-center text-white fw-bold" style="width: 24px; height: 24px; background: #059669; font-size: 0.78rem;">1</span>
+              <div>
+                <h6 class="fw-bold text-dark mb-0" style="font-size: 0.88rem;">Customer Selection</h6>
+                <div class="text-muted" style="font-size: 0.72rem;">Search existing customer or register a new client for this solar project.</div>
+              </div>
+            </div>
+            <!-- Quick Create Customer Modal Trigger -->
+            <button type="button" class="btn btn-sm btn-solar-outline" data-bs-toggle="modal" data-bs-target="#quickCustomerModal">
+              <i class="bi bi-person-plus-fill text-success me-1"></i>
+              <span>+ Quick Create Customer</span>
+            </button>
+          </div>
+
+          <div class="p-3" style="overflow: visible;">
+            <!-- Hidden input for stage (auto-assigned from pipeline context or default) -->
+            <div class="d-none">
+              {{ form.stage }}
+            </div>
+            {% if form.stage.errors %}
+              <div class="alert alert-danger py-1 px-2 small mb-2">{{ form.stage.errors.0 }}</div>
+            {% endif %}
+
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-person me-1 text-success"></i> Client / Customer Account <span class="text-danger">*</span>
+                </label>
+                
+                <!-- Native Django customer select (hidden in DOM for standard form POST submission) -->
+                <div style="display: none;">
+                  {{ form.customer }}
+                </div>
+
+                <!-- Serialized Customer Database for instant client search & metadata -->
+                <script id="customerDataJson" type="application/json">
+                [
+                  {% for cust in all_customers %}
+                  {
+                    "id": "{{ cust.id }}",
+                    "name": "{{ cust.name|escapejs }}",
+                    "code": "{{ cust.customer_id|default:''|escapejs }}",
+                    "phone": "{{ cust.phone|default:''|escapejs }}",
+                    "email": "{{ cust.email|default:''|escapejs }}",
+                    "city": "{{ cust.city|default:''|escapejs }}",
+                    "consumer_number": "{{ cust.consumer_number|default:''|escapejs }}",
+                    "house_building": "{{ cust.house_building|default:''|escapejs }}",
+                    "street": "{{ cust.street|default:''|escapejs }}",
+                    "state": "{{ cust.state|default:''|escapejs }}",
+                    "postal_code": "{{ cust.postal_code|default:''|escapejs }}",
+                    "coordinates": "{{ cust.coordinates|default:''|escapejs }}"
+                  }{% if not forloop.last %},{% endif %}
+                  {% endfor %}
+                ]
+                </script>
+
+                <!-- Search & Select Combobox Container -->
+                <div class="customer-combobox-wrapper position-relative" id="customerCombobox" style="z-index: 50;">
+                  <!-- State 1: Active Selected Customer Card -->
+                  <div class="combobox-selected-card d-none align-items-center justify-content-between p-2 rounded-2 border bg-white shadow-2xs" id="comboboxSelectedCard">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                      <div class="user-avatar-circle" id="selectedCustomerAvatar" style="width: 30px; height: 30px; font-size: 0.76rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; border-radius: 6px; flex-shrink: 0; font-weight: 600;">
+                        A
+                      </div>
+                      <div class="overflow-hidden">
+                        <div class="fw-bold text-dark text-truncate" id="selectedCustomerName" style="font-size: 0.85rem;">
+                          Customer Name
+                        </div>
+                        <div class="text-muted text-truncate font-monospace" id="selectedCustomerSub" style="font-size: 0.72rem;">
+                          CUST-1001 &bull; Active
+                        </div>
+                      </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light border py-1 px-2.5 text-muted rounded-1 shadow-2xs d-inline-flex align-items-center gap-1 flex-shrink-0" id="btnChangeCustomer" title="Select different client">
+                      <i class="bi bi-arrow-repeat text-primary"></i> <span style="font-size: 0.76rem;">Change</span>
+                    </button>
+                  </div>
+
+                  <!-- State 2: Search Input & Dropdown Menu -->
+                  <div class="combobox-input-wrapper position-relative" id="comboboxInputWrapper">
+                    <div class="input-group">
+                      <span class="input-group-text bg-white border-end-0 text-muted ps-2.5">
+                        <i class="bi bi-search text-success" id="comboboxSearchIcon"></i>
+                      </span>
+                      <input type="text" class="form-control border-start-0 ps-1" id="customerSearchInput" placeholder="Type name, ID (e.g. CUST-1012), phone to search..." autocomplete="off">
+                      <button type="button" class="btn btn-outline-secondary border-start-0 d-none" id="btnClearCustomerSearch" title="Clear">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    </div>
+
+                    <!-- Dropdown Results Panel -->
+                    <div class="combobox-dropdown-panel shadow-lg border rounded-3 bg-white mt-1 d-none position-absolute w-100" id="comboboxDropdown" style="top: 100%; left: 0; z-index: 1060; max-height: 330px; display: flex; flex-direction: column;">
+                      <div class="combobox-items-list overflow-auto flex-grow-1" id="comboboxItemsList" style="max-height: 260px;">
+                        <!-- Options rendered dynamically -->
+                      </div>
+
+                      <!-- Pinned Bottom Quick Action -->
+                      <div class="p-2.5 border-top bg-light d-flex align-items-center justify-content-between rounded-bottom-3">
+                        <span class="text-muted small" style="font-size: 0.73rem;"><i class="bi bi-info-circle text-primary me-1"></i>Client not found?</span>
+                        <button type="button" class="btn btn-xs btn-solar-primary" id="btnComboboxOpenModal">
+                          <i class="bi bi-plus-lg me-1"></i> New Customer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-text mt-1 text-muted" style="font-size: 0.72rem;">Type to search existing clients, or add a new customer directly if not found.</div>
+              </div>
+
+              <!-- Electricity Consumer Number -->
+              <div class="col-md-5">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Electricity Consumer Number
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-hash text-success"></i></span>
+                  {{ form.consumer_number }}
+                </div>
+                {% if form.consumer_number.errors %}
+                  <div class="text-danger small mt-1">{{ form.consumer_number.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text mt-1 text-muted" style="font-size: 0.72rem;">13-digit DISCOM / KSEB consumer ID for net metering & solar subsidy.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Site Location & Detailed Installation Address -->
+        <div class="card border rounded-4 shadow-sm mb-4 bg-white" id="step-location">
+          <div class="p-3 px-4 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background: #8b5cf6; font-size: 0.9rem;">2</span>
+              <div>
+                <h6 class="fw-bold text-dark mb-0">Site Location & Detailed Installation Address</h6>
+                <div class="text-muted" style="font-size: 0.75rem;">Enter project installation site address in standard Indian format.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <!-- Row 1: Building/House & Street/Area/Landmark -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-5">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-house me-1 text-primary"></i> House / Flat / Building No. & Name
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-house-door"></i></span>
+                  {{ form.site_house_flat }}
+                </div>
+                {% if form.site_house_flat.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_house_flat.errors.0 }}</div>
+                {% endif %}
+              </div>
+              <div class="col-md-7">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-signpost-2 me-1 text-primary"></i> Street / Road / Locality / Landmark
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-signpost-2"></i></span>
+                  {{ form.site_street_area }}
+                </div>
+                {% if form.site_street_area.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_street_area.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Row 2: State, District, City, PIN Code -->
+            <div class="row g-3 mb-4">
+              <!-- State (Controls District list) -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-map-fill text-primary me-1"></i> State <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-map"></i></span>
+                  {{ form.site_state }}
+                </div>
+                {% if form.site_state.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_state.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- District (Populated based on State) -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-geo-alt-fill text-primary me-1"></i> District <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-geo-alt"></i></span>
+                  {{ form.site_district }}
+                </div>
+                {% if form.site_district.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_district.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text text-muted" style="font-size: 0.71rem;">Districts update based on selected State.</div>
+              </div>
+
+              <!-- City / Town / Village -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-buildings me-1 text-secondary"></i> City / Town / Village
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-building"></i></span>
+                  {{ form.site_city }}
+                </div>
+                {% if form.site_city.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_city.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <!-- PIN Code -->
+              <div class="col-md-3">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-pin-map me-1 text-secondary"></i> PIN Code (6 Digits)
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-pin-angle"></i></span>
+                  {{ form.site_pincode }}
+                </div>
+                {% if form.site_pincode.errors %}
+                  <div class="text-danger small mt-1">{{ form.site_pincode.errors.0 }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+                        <!-- Google Maps Location / Rooftop GPS Coordinates (Single clean option) -->
+            <div class="mt-3 pt-3 border-top">
+              <div class="d-flex align-items-center justify-content-between mb-1.5 flex-wrap gap-2">
+                <label class="form-label fw-semibold small text-secondary mb-0">
+                  <i class="bi bi-geo-alt-fill text-danger me-1"></i> Google Maps Location / Rooftop GPS Coordinates
+                  <span class="badge bg-light text-muted border ms-1 fw-normal" style="font-size: 0.7rem;">Optional</span>
+                </label>
+                <span class="text-muted" style="font-size: 0.73rem;">Paste Google Maps link, Plus code (e.g. QJ94+P2), or Lat, Long</span>
+              </div>
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-danger"><i class="bi bi-pin-map-fill"></i></span>
+                {{ form.site_location_url }}
+                <button type="button" class="btn btn-outline-primary px-3 d-inline-flex align-items-center gap-1.5" id="btnOpenGoogleMap" onclick="locateOnGoogleMap()">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                  <span>View on Map</span>
+                </button>
+              </div>
+              {% if form.site_location_url.errors %}
+                <div class="text-danger small mt-1">{{ form.site_location_url.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Solar Hardware & Engineering Specs -->
+        <div class="card border rounded-4 shadow-sm mb-4 bg-white" id="step-specs">
+          <div class="p-3 px-4 border-bottom d-flex align-items-center gap-3">
+            <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background: #059669; font-size: 0.9rem;">3</span>
+            <div>
+              <h6 class="fw-bold text-dark mb-0">Solar Hardware & Engineering Specs</h6>
+              <div class="text-muted" style="font-size: 0.75rem;">Enter system capacity, panel details, inverter, mounting structure and accessories.</div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="row g-4">
+              <!-- Hidden compatibility field -->
+              
+
+              <!-- ================= ROW 1: SOLAR PANEL BRAND & TECHNOLOGY (50% / 50% NEXT TO EACH OTHER) ================= -->
+              <!-- 1. Solar Panel Brand / Company -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <label class="form-label fw-semibold small text-secondary mb-0">Solar Panel Brand / Company</label>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=PANEL_BRAND" target="_blank" class="text-muted" title="Manage master brands in Settings" style="font-size: 0.72rem;"><i class="bi bi-gear-fill"></i></a>
+                  </div>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-success fw-medium" id="btnToggleCustomBrand" style="font-size: 0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Brand
+                  </button>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-success"><i class="bi bi-patch-check-fill"></i></span>
+                  {{ form.panel_brand }}
+                </div>
+
+                <!-- Dynamic Input when 'Other / Custom Brand' is selected or 'Add New Brand' clicked -->
+                <div id="customBrandWrapper" class="mt-2 p-2 border rounded-3 bg-light shadow-2xs" style="display: none; border-color: #a7f3d0 !important; background-color: #f0fdf4 !important;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-semibold text-success small" style="font-size: 0.78rem;">
+                      <i class="bi bi-plus-circle-fill me-1"></i>Enter Solar Panel Brand
+                    </span>
+                    <button type="button" class="btn-close" id="btnCloseCustomBrand" aria-label="Close" style="font-size: 0.65rem;"></button>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    {{ form.custom_panel_brand }}
+                    <button type="button" class="btn btn-solar-primary px-3 fw-semibold" id="btnApplyNewBrand" style="background: #059669; border-color: #059669; color: white;">
+                      <i class="bi bi-check-lg me-1"></i>Add to List
+                    </button>
+                  </div>
+                  {% if form.custom_panel_brand.errors %}
+                    <div class="text-danger small mt-1">{{ form.custom_panel_brand.errors.0 }}</div>
+                  {% endif %}
+                  <div id="customBrandFeedback" class="small text-muted mt-1" style="font-size: 0.73rem;">
+                    Type custom brand (e.g. <em>RenewSys Solar</em>) and click Add.
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. Panel Technology / Cell Type (Next to Brand) -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <label class="form-label fw-semibold small text-secondary mb-0">Panel Technology / Type</label>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=PANEL_TECH" target="_blank" class="text-muted" title="Manage technologies in Settings" style="font-size: 0.72rem;"><i class="bi bi-gear-fill"></i></a>
+                  </div>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-success fw-medium" id="btnToggleCustomTech" style="font-size: 0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Type
+                  </button>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-success"><i class="bi bi-cpu-fill"></i></span>
+                  {{ form.panel_tech }}
+                </div>
+
+                <!-- Dynamic Input when 'Other / Custom Technology' is selected or 'Add New Type' clicked -->
+                <div id="customTechWrapper" class="mt-2 p-2 border rounded-3 bg-light shadow-2xs" style="display: none; border-color: #a7f3d0 !important; background-color: #f0fdf4 !important;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-semibold text-success small" style="font-size: 0.78rem;">
+                      <i class="bi bi-plus-circle-fill me-1"></i>Enter Panel Technology / Type
+                    </span>
+                    <button type="button" class="btn-close" id="btnCloseCustomTech" aria-label="Close" style="font-size: 0.65rem;"></button>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    {{ form.custom_panel_tech }}
+                    <button type="button" class="btn btn-solar-primary px-3 fw-semibold" id="btnApplyNewTech" style="background: #059669; border-color: #059669; color: white;">
+                      <i class="bi bi-check-lg me-1"></i>Add to List
+                    </button>
+                  </div>
+                  {% if form.custom_panel_tech.errors %}
+                    <div class="text-danger small mt-1">{{ form.custom_panel_tech.errors.0 }}</div>
+                  {% endif %}
+                  <div id="customTechFeedback" class="small text-muted mt-1" style="font-size: 0.73rem;">
+                    Type custom tech (e.g. <em>HJT Heterojunction Dual-Glass</em>) and click Add.
+                  </div>
+                </div>
+              </div>
+
+              <!-- ================= ROW 2: TOTAL MODULES & WATTAGE (ADJACENT) + TOTAL POWER ================= -->
+              <!-- 3. Total Panel Modules -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary mb-1.5">
+                  <i class="bi bi-grid-3x3-gap-fill text-success me-1"></i> Total Panel Modules
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-success"><i class="bi bi-grid-3x3-gap"></i></span>
+                  {{ form.number_of_panels }}
+                  <span class="input-group-text bg-light text-muted border-start-0 fw-semibold">Panels</span>
+                </div>
+                <div class="text-muted small mt-1.5" style="font-size: 0.76rem;">
+                  Total module count for installation.
+                </div>
+              </div>
+
+              <!-- 4. Panel Wattage (Watts / Wp) - Next to Total Panel Modules -->
+              <div class="col-md-4">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <label class="form-label fw-semibold small text-secondary mb-0">
+                    <i class="bi bi-lightning-fill text-warning me-1"></i> Panel Wattage (Watts / Wp)
+                  </label>
+                  <span class="text-muted small" style="font-size: 0.74rem;">Standard Wp</span>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-warning"><i class="bi bi-lightning-fill"></i></span>
+                  {{ form.panel_wattage }}
+                  <span class="input-group-text bg-light text-muted border-start-0 fw-semibold">Wp</span>
+                </div>
+                <!-- Clean, spacious presets -->
+                <div class="d-flex flex-wrap align-items-center gap-1.5 mt-2" id="wattagePresetPills">
+                  <span class="text-muted fw-semibold me-1" style="font-size: 0.75rem;">Presets:</span>
+                  <button type="button" class="btn btn-sm btn-outline-success wattage-preset-pill px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.76rem;" data-wattage="540">540W</button>
+                  <button type="button" class="btn btn-sm btn-outline-success wattage-preset-pill px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.76rem;" data-wattage="550">550W</button>
+                  <button type="button" class="btn btn-sm btn-outline-success wattage-preset-pill px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.76rem;" data-wattage="575">575W</button>
+                  <button type="button" class="btn btn-sm btn-outline-success wattage-preset-pill px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.76rem;" data-wattage="580">580W</button>
+                  <button type="button" class="btn btn-sm btn-outline-success wattage-preset-pill px-2 py-0.5 rounded-pill fw-semibold" style="font-size: 0.76rem;" data-wattage="600">600W</button>
+                </div>
+              </div>
+
+              <!-- 5. Total Power / System Capacity (kW) - Readonly calculated, no text badges -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary mb-1.5">
+                  <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Total Power / System Capacity (kW)
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light text-success border-end-0"><i class="bi bi-lightning-charge-fill"></i></span>
+                  {{ form.system_capacity_kw }}
+                  <span class="input-group-text bg-light text-secondary border-start-0 fw-bold">kW</span>
+                </div>
+                <!-- Real-time formula indicator (no Readonly badge) -->
+                <div class="mt-2 p-2 px-2.5 rounded-2 bg-light border border-success-subtle d-flex align-items-center gap-2" id="capacityCalcLiveBox">
+                  <i class="bi bi-calculator-fill text-success" style="font-size: 0.88rem;"></i>
+                  <span class="text-dark fw-semibold" id="capacityCalcText" style="font-size: 0.82rem;">
+                    0 Panels &times; 0W = <span class="text-success fw-bold">0.00 kW</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- ================= ROW 3: INVERTER & MOUNTING STRUCTURE (50% / 50% BALANCED) ================= -->
+              <!-- 6. Inverter Model / Rating -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <label class="form-label fw-semibold small text-secondary mb-0">Inverter Model / Rating</label>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=INVERTER" target="_blank" class="text-muted" title="Manage master inverters in Settings" style="font-size: 0.72rem;"><i class="bi bi-gear-fill"></i></a>
+                  </div>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-success fw-medium" id="btnToggleCustomInverter" style="font-size: 0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Inverter
+                  </button>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-success"><i class="bi bi-cpu"></i></span>
+                  {{ form.inverter_type }}
+                </div>
+
+                <!-- Dynamic Input when 'Other / Custom Inverter' is selected or 'Add New Inverter' clicked -->
+                <div id="customInverterWrapper" class="mt-2 p-2 border rounded-2 bg-light shadow-2xs" style="display: none; border-color: #a7f3d0 !important; background-color: #f0fdf4 !important;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-semibold text-success small" style="font-size: 0.76rem;">
+                      <i class="bi bi-plus-circle-fill me-1"></i>Enter Inverter Model & Rating
+                    </span>
+                    <button type="button" class="btn-close" id="btnCloseCustomInverter" aria-label="Close" style="font-size: 0.65rem;"></button>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    {{ form.custom_inverter_name }}
+                    <button type="button" class="btn btn-solar-primary px-3 fw-semibold" id="btnApplyNewInverter" style="background: #059669; border-color: #059669; color: white;">
+                      <i class="bi bi-check-lg me-1"></i>Add to List
+                    </button>
+                  </div>
+                  {% if form.custom_inverter_name.errors %}
+                    <div class="text-danger small mt-1">{{ form.custom_inverter_name.errors.0 }}</div>
+                  {% endif %}
+                  <div id="customInverterFeedback" class="small text-muted mt-1" style="font-size: 0.72rem;">
+                    Type inverter spec (e.g. <em>Growatt 10kW Hybrid Battery-Ready</em>) and click Add or submit.
+                  </div>
+                </div>
+              </div>
+
+              <!-- 7. Mounting Structure Type -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1.5">
+                  <div class="d-flex align-items-center gap-1.5">
+                    <label class="form-label fw-semibold small text-secondary mb-0">Mounting Structure Type</label>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=MOUNTING" target="_blank" class="text-muted" title="Manage master mounting list in Settings" style="font-size: 0.72rem;"><i class="bi bi-gear-fill"></i></a>
+                  </div>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-success fw-medium" id="btnToggleCustomMount" style="font-size: 0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Mount
+                  </button>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-success"><i class="bi bi-layers-fill"></i></span>
+                  {{ form.installation_type }}
+                </div>
+
+                <!-- Dynamic Input when 'Other Custom Mount' is selected or 'Add New Mount' clicked -->
+                <div id="customMountWrapper" class="mt-2 p-2 border rounded-3 bg-light shadow-2xs" style="display: none; border-color: #a7f3d0 !important; background-color: #f0fdf4 !important;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-semibold text-success small" style="font-size: 0.78rem;">
+                      <i class="bi bi-plus-circle-fill me-1"></i>Enter Custom Mounting Type
+                    </span>
+                    <button type="button" class="btn-close" id="btnCloseCustomMount" aria-label="Close" style="font-size: 0.65rem;"></button>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    {{ form.custom_installation_type }}
+                    <button type="button" class="btn btn-solar-primary px-3 fw-semibold" id="btnApplyNewMount" style="background: #059669; border-color: #059669; color: white;">
+                      <i class="bi bi-check-lg me-1"></i>Add to List
+                    </button>
+                  </div>
+                  {% if form.custom_installation_type.errors %}
+                    <div class="text-danger small mt-1">{{ form.custom_installation_type.errors.0 }}</div>
+                  {% endif %}
+                  <div id="customMountFeedback" class="small text-muted mt-1" style="font-size: 0.73rem;">
+                    Type custom structure (e.g. <em>Ballasted Flat Roof Mount</em>) and click Add or submit.
+                  </div>
+                </div>
+              </div>
+
+              <!-- ================= ROW 4: CUSTOMER REQUIREMENTS (FULL-WIDTH 100%) ================= -->
+              <!-- 8. Additional Customer Requirements -->
+              <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary mb-1.5">Additional Customer Requirements</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted align-items-start pt-2.5"><i class="bi bi-file-text"></i></span>
+                  {{ form.additional_requirements }}
+                </div>
+              </div>
+
+              <!-- 9. Required Accessories & Safety Gear (Full-Width Spacious Row) -->
+              <div class="col-12 mt-3 pt-3 border-top">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-shield-check text-success fs-5"></i>
+                    <div>
+                      <span class="fw-semibold text-dark small mb-0">Required Accessories &amp; Safety Gear</span>
+                      <div class="text-muted" style="font-size: 0.74rem;">Select standard job gear from shelf or type custom accessories.</div>
+                    </div>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=ACCESSORY" target="_blank" class="text-muted ms-1" title="Manage accessories quick shelf in Settings" style="font-size: 0.72rem;"><i class="bi bi-gear-fill"></i></a>
+                  </div>
+                  <span class="badge bg-light text-secondary border px-2.5 py-1" style="font-size: 0.75rem;" id="accessoriesCountBadge">0 items selected</span>
+                </div>
+                {{ form.required_accessories }}
+                
+                <!-- Active Accessories Tag Box -->
+                <div class="accessories-tag-box p-2.5 border rounded-3 bg-white d-flex flex-wrap align-items-center gap-2 mb-2.5" id="accessoriesContainer" style="min-height: 48px;">
+                  <!-- Rendered dynamically from saved/default values -->
+                </div>
+
+                <!-- Custom Accessory Add Bar -->
+                <div class="input-group mb-2.5" style="max-width: 520px;">
+                  <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-tag"></i></span>
+                  <input type="text" class="form-control border-start-0" id="customAccessoryInput" placeholder="Type custom accessory name and press Enter..." autocomplete="off">
+                  <button type="button" class="btn btn-solar-outline px-3 fw-medium" id="btnAddCustomAccessory">
+                    <i class="bi bi-plus-lg me-1"></i> Add
+                  </button>
+                </div>
+
+                <!-- Quick-Pick Shelf of Standard Solar Gear (1-Click Toggle) -->
+                <div class="p-2.5 border rounded-3 bg-light">
+                  <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="text-muted small fw-semibold" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;">
+                      <i class="bi bi-lightning-charge text-warning me-1"></i> Quick-Add Standard Equipment Shelf:
+                    </div>
+                    <a href="{% url 'core:settings' %}?tab=catalog&cat=ACCESSORY" target="_blank" class="text-muted text-decoration-none small" style="font-size: 0.72rem;">
+                      <i class="bi bi-gear-fill me-0.5"></i>Manage Shelf
+                    </a>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2" id="accessoryQuickShelf">
+                    {% for acc in accessory_shelf_items %}
+                      <button type="button" 
+                              class="btn btn-sm btn-outline-secondary accessory-shelf-btn py-1 px-2.5 rounded-pill fw-medium" 
+                              style="font-size: 0.76rem;"
+                              data-tag="{{ acc }}" data-accessory-name="{{ acc }}">
+                        <i class="bi bi-plus-lg me-1 text-success"></i>{{ acc }}
+                      </button>
+                    {% empty %}
+                      <span class="text-muted small">No catalog shelf accessories defined yet. Click Manage Shelf to add.</span>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Section 4: Commercial Terms & Balance Calculation -->
+        <div class="card border rounded-4 shadow-sm mb-4 bg-white" id="step-financials">
+          <div class="p-3 px-4 border-bottom d-flex align-items-center gap-3">
+            <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background: #f59e0b; font-size: 0.9rem;">4</span>
+            <div>
+              <h6 class="fw-bold text-dark mb-0">Commercial Terms & Balance Calculation</h6>
+              <div class="text-muted" style="font-size: 0.75rem;">Enter contract value, received amount and view auto calculated balance.</div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="row g-3 align-items-end">
+              <!-- Total Contract Value -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-cash-stack text-success me-1"></i> Total Contract Value (₹)
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-currency-rupee text-success"></i> ₹</span>
+                  {{ form.booking_amount }}
+                </div>
+              </div>
+
+              <!-- Advance Deposit Received -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Advance Deposit Received (₹)</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-currency-rupee text-success"></i> ₹</span>
+                  {{ form.advance_payment }}
+                </div>
+              </div>
+
+              <!-- Auto Calculated Balance Card -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-cash-stack text-success me-1"></i> Remaining Balance
+                </label>
+                <div class="p-2 px-3 border rounded-3 bg-light d-flex align-items-center justify-content-between" style="height: 44px;">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-scales text-success fs-5"></i>
+                    <span id="calculated_balance_display" class="fw-bold fs-5 text-dark">₹ 0.00</span>
+                  </div>
+                  <span class="badge rounded-pill fw-semibold" id="balanceBadge" style="background: #dcfce7; color: #15803d; font-size: 0.75rem;">Receivable</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Schedules & Assigned Personnel -->
+        <div class="card border rounded-4 shadow-sm mb-4 bg-white" id="step-schedule">
+          <div class="p-3 px-4 border-bottom d-flex align-items-center gap-3">
+            <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background: #6366f1; font-size: 0.9rem;">5</span>
+            <div>
+              <h6 class="fw-bold text-dark mb-0">Schedules & Assigned Personnel</h6>
+              <div class="text-muted" style="font-size: 0.75rem;">Set booking date, expected dates and view team members.</div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div class="row g-3">
+              <!-- Booking Date -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Booking Date</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar-event"></i></span>
+                  {{ form.booking_date }}
+                </div>
+                {% if form.booking_date.errors %}
+                  <div class="text-danger small mt-1">{{ form.booking_date.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text text-muted" style="font-size: 0.72rem;">Project inception date</div>
+              </div>
+
+              <!-- Expected Installation Date -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Expected Installation Date</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar-check"></i></span>
+                  {{ form.expected_installation_date }}
+                </div>
+                <div id="expectedInstallationFeedback" class="small mt-1 d-none"></div>
+                {% if form.expected_installation_date.errors %}
+                  <div class="text-danger small mt-1">{{ form.expected_installation_date.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text text-muted" style="font-size: 0.72rem;">Must be on or after Booking Date</div>
+              </div>
+
+              <!-- Expected Completion Date -->
+              <div class="col-md-4">
+                <label class="form-label fw-semibold small text-secondary">Expected Completion Date</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar2-check"></i></span>
+                  {{ form.expected_completion_date }}
+                </div>
+                <div id="expectedCompletionFeedback" class="small mt-1 d-none"></div>
+                {% if form.expected_completion_date.errors %}
+                  <div class="text-danger small mt-1">{{ form.expected_completion_date.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text text-muted" style="font-size: 0.72rem;">Must be on or after Installation / Booking Date</div>
+              </div>
+
+              <!-- Assigned Staff -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-person-badge text-success me-1"></i> Assigned Staff
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-person-fill"></i></span>
+                  {{ form.assigned_salesperson }}
+                </div>
+              </div>
+
+              <!-- Assigned Team -->
+              <div class="col-md-6">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label fw-semibold small text-secondary mb-0">
+                    <i class="bi bi-people text-success me-1"></i> Assigned Team
+                  </label>
+                  <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-success fw-medium" id="btnToggleCustomTeam" style="font-size: 0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add New Team
+                  </button>
+                </div>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-people-fill"></i></span>
+                  {{ form.assigned_team_driver }}
+                </div>
+
+                <!-- Dynamic Input when 'Other / Custom Team' is selected or 'Add New Team' clicked -->
+                <div id="customTeamWrapper" class="mt-2 p-2 border rounded-2 bg-light shadow-2xs" style="display: none; border-color: #a7f3d0 !important; background-color: #f0fdf4 !important;">
+                  <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="fw-semibold text-success small" style="font-size: 0.76rem;">
+                      <i class="bi bi-plus-circle-fill me-1"></i>Enter New Team or Crew Name
+                    </span>
+                    <button type="button" class="btn-close" id="btnCloseCustomTeam" aria-label="Close" style="font-size: 0.65rem;"></button>
+                  </div>
+                  <div class="input-group input-group-sm">
+                    {{ form.custom_team_name }}
+                    <button type="button" class="btn btn-solar-primary px-3 fw-semibold" id="btnApplyNewTeam" style="background: #059669; border-color: #059669; color: white;">
+                      <i class="bi bi-check-lg me-1"></i>Add to List
+                    </button>
+                  </div>
+                  {% if form.custom_team_name.errors %}
+                    <div class="text-danger small mt-1">{{ form.custom_team_name.errors.0 }}</div>
+                  {% endif %}
+                  <div id="customTeamFeedback" class="small text-muted mt-1" style="font-size: 0.72rem;">
+                    Type crew or team name (e.g. <em>Delta Installation Team</em>) and click Add or submit.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Internal Operations Notes -->
+              <div class="col-12">
+                <label class="form-label fw-semibold small text-secondary">
+                  <i class="bi bi-file-earmark-text text-success me-1"></i> Internal Operations Notes
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted align-items-start pt-2"><i class="bi bi-pencil-square"></i></span>
+                  {{ form.internal_notes }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 6: Project Documents & Attachments -->
+        <div class="card border rounded-4 shadow-sm mb-4 bg-white" id="step-documents">
+          <div class="p-3 px-4 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-3">
+              <span class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold" style="width: 32px; height: 32px; background: #0284c7; font-size: 0.9rem;">6</span>
+              <div>
+                <h6 class="fw-bold text-dark mb-0">Project Documents & Site Attachments</h6>
+                <div class="text-muted" style="font-size: 0.75rem;">Upload electricity bill, site photos, Aadhaar / KYC ID, or structural analysis report.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4">
+            <div id="documentRowsContainer" class="d-flex flex-column gap-3">
+              <!-- Initial Document Upload Row -->
+              <div class="document-upload-row border rounded-3 p-3 bg-light position-relative shadow-2xs">
+                <div class="row g-3 align-items-end">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold small text-secondary">
+                      <i class="bi bi-tag-fill text-primary me-1"></i> Document Title
+                    </label>
+                    <input type="text" name="document_titles" class="form-control" placeholder="e.g. KSEB Electricity Bill, Aadhaar Card, Roof Photo">
+                  </div>
+                  <div class="col-md-6">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                      <label class="form-label fw-semibold small text-secondary mb-0">Select File</label>
+                      <span class="text-muted" style="font-size: 0.72rem;">PDF, PNG, JPG, DOC (Max 25MB)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <input type="file" name="document_files" class="form-control" accept=".pdf,image/*,.doc,.docx">
+                      <button type="button" class="btn btn-outline-danger btn-sm px-2.5 btn-remove-doc-row d-none" title="Remove Document">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-top d-flex flex-wrap align-items-center justify-content-between gap-2">
+              <span class="text-muted small" style="font-size: 0.78rem;">
+                <i class="bi bi-shield-check text-success me-1"></i> Uploaded documents will be immediately linked and accessible on this order's project files repository.
+              </span>
+              <button type="button" class="btn btn-sm btn-outline-primary rounded-3 d-inline-flex align-items-center gap-1.5 px-3 py-1.5 fw-semibold shadow-xs" id="btnAddDocumentRow">
+                <i class="bi bi-plus-lg"></i>
+                <span>Add Document</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Action Bar -->
+        <div class="card border rounded-4 shadow-sm bg-white p-3 px-4 mb-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <a href="{% if is_edit %}{{ object.get_absolute_url }}{% else %}{% url 'bookings:list' %}{% endif %}" class="btn btn-outline-secondary px-4 py-2 fw-medium rounded-3" style="font-size: 0.88rem;">
+              Cancel
+            </a>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <button type="submit" name="save_as_draft" value="1" class="btn btn-outline-secondary btn-save-draft px-3 py-2 fw-medium rounded-3 d-inline-flex align-items-center gap-2" style="font-size: 0.88rem;">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Save as Draft</span>
+              </button>
+              <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-3 d-inline-flex align-items-center gap-2 shadow-sm" style="background: #059669; border-color: #059669; font-size: 0.88rem;">
+                <i class="bi bi-check2 fs-5"></i>
+                <span>{{ btn_text|default:"Create Booking" }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Modal: Quick Create Customer -->
+<div class="modal fade" id="quickCustomerModal" tabindex="-1" aria-labelledby="quickCustLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-3 overflow-hidden">
+      <div class="modal-header border-bottom p-3 bg-white">
+        <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="quickCustLabel" style="font-size: 0.95rem;">
+          <span class="rounded-1 d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: #ecfdf5; color: #059669; font-size: 0.85rem;">
+            <i class="bi bi-person-plus-fill"></i>
+          </span>
+          <span>Quick Register Customer</span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="quickCustomerForm">
+        {% csrf_token %}
+        <div class="modal-body p-3 bg-white">
+          <div id="quickCustomerAlert" class="alert alert-danger d-none py-2 px-3 mb-3 small d-flex align-items-center gap-2 rounded-2">
+            <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+            <span id="quickCustomerAlertText"></span>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" id="quick_customer_name" class="form-control" placeholder="e.g. Michael Scott" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">Mobile Phone Number <span class="text-danger">*</span></label>
+            <input type="text" name="phone" id="quick_customer_phone" class="form-control" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" data-country-phone="true" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">
+              <i class="bi bi-lightning-charge-fill text-warning me-1"></i> Electricity Consumer Number
+            </label>
+            <input type="text" name="consumer_number" id="quick_customer_consumer_number" class="form-control" placeholder="e.g. 13-digit Consumer ID (KSEB / DISCOM)">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">Town / City <span class="text-danger">*</span></label>
+            <input type="text" name="city" id="quick_customer_city" class="form-control" placeholder="e.g. Pattambi / Kochi / Aluva" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-secondary">Site Address / Street</label>
+            <input type="text" name="street" id="quick_customer_street" class="form-control" placeholder="e.g. 1725 Sunrise Avenue">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Customer Type</label>
+              <select name="customer_type" id="quick_customer_type" class="form-select">
+                <option value="INDIVIDUAL">Individual / Residential</option>
+                <option value="BUSINESS">Commercial / Business</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Lead Source</label>
+              <select name="lead_source" id="quick_customer_lead_source" class="form-select">
+                {% for src in catalog_lead_sources %}
+                  <option value="{{ src }}">{{ src }}</option>
+                {% empty %}
+                  <option value="Website Inquiry">Website Inquiry</option>
+                  <option value="Customer Referral">Customer Referral</option>
+                  <option value="Social Media Campaign">Social Media Campaign</option>
+                  <option value="Field Sales Agent">Field Sales Agent</option>
+                  <option value="Direct Phone Call">Direct Phone Call</option>
+                  <option value="Other / Walk-in">Other / Walk-in</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-2.5 bg-light">
+          <button type="button" class="btn btn-sm btn-outline-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary px-3 shadow-xs" id="btnQuickSubmit">
+            <i class="bi bi-check-lg me-1"></i> Register & Select
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Page Specific CSS -->
+<style>
+  .btn-back-hero {
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 0.84rem;
+    transition: all 0.15s ease-in-out;
+  }
+  .btn-back-hero:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  }
+  .btn-back-hero i {
+    color: #64748b;
+    transition: color 0.15s ease;
+  }
+  .btn-back-hero:hover i {
+    color: #0f172a;
+  }
+
+  /* Combobox Styles */
+  #step-customer {
+    overflow: visible !important;
+    position: relative;
+    z-index: 45;
+  }
+  .customer-combobox-wrapper {
+    position: relative;
+    z-index: 50;
+  }
+  .combobox-dropdown-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1060;
+    background-color: #ffffff;
+    box-shadow: 0 14px 35px -4px rgba(0, 0, 0, 0.18), 0 6px 12px -2px rgba(0, 0, 0, 0.06);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    margin-top: 4px;
+    overflow: hidden;
+  }
+  .combobox-items-list {
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .combobox-item {
+    padding: 0.6rem 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+  }
+  .combobox-item:last-child {
+    border-bottom: none;
+  }
+  .combobox-item:hover, .combobox-item.is-focused {
+    background-color: #f0fdf4;
+  }
+  .combobox-item.is-selected {
+    background-color: #ecfdf5;
+    border-left: 3.5px solid #059669;
+  }
+  .btn-xs {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    border-radius: 4px;
+  }
+  /* Accessory Tag Pills */
+  .accessory-pill {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
+  }
+  .accessory-pill .remove-pill {
+    color: #94a3b8;
+    transition: color 0.15s ease;
+  }
+  .accessory-pill .remove-pill:hover {
+    color: #ef4444;
+  }
+
+  /* Form Control Focus */
+  .form-control, .form-select {
+    border-color: #e2e8f0;
+    font-size: 0.88rem;
+    border-radius: 8px;
+  }
+  .form-control:focus, .form-select:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+  }
+</style>
+
+<!-- Real-time Balance Calculation & Modal Handling -->
+<script>
+  function calculateSolarBalance() {
+    const totalInput = document.getElementById('id_booking_amount');
+    const advanceInput = document.getElementById('id_advance_payment');
+    const balanceDisplay = document.getElementById('calculated_balance_display');
+    const balanceBadge = document.getElementById('balanceBadge');
+
+    if (!totalInput || !advanceInput || !balanceDisplay) return;
+
+    const total = parseFloat(totalInput.value) || 0;
+    const advance = parseFloat(advanceInput.value) || 0;
+    const balance = Math.max(0, total - advance);
+
+    balanceDisplay.textContent = '₹ ' + balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (balanceBadge) {
+      if (balance === 0 && total > 0) {
+        balanceBadge.textContent = 'Fully Paid';
+        balanceBadge.style.backgroundColor = '#dcfce7';
+        balanceBadge.style.color = '#15803d';
+      } else {
+        balanceBadge.textContent = 'Receivable';
+        balanceBadge.style.backgroundColor = '#dcfce7';
+        balanceBadge.style.color = '#15803d';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Dynamic District dropdown based on State
+    const stateEl = document.getElementById('id_site_state');
+    const districtEl = document.getElementById('id_site_district');
+    if (stateEl && districtEl) {
+      const initialDistrictVal = districtEl.value;
+      updateDistrictsForState(stateEl.value || 'Kerala', initialDistrictVal);
+
+      stateEl.addEventListener('change', function() {
+        updateDistrictsForState(this.value, '');
+      });
+    }
+
+    // =========================================================================
+    // DYNAMIC SCHEDULE & DATE RESTRICTION ENGINE
+    // Rules:
+    // 1. Expected Installation Date >= Booking Date
+    // 2. Expected Completion Date >= Expected Installation Date (or Booking Date)
+    // =========================================================================
+    const bookingDateInput = document.getElementById('id_booking_date');
+    const expectedInstallInput = document.getElementById('id_expected_installation_date');
+    const expectedCompleteInput = document.getElementById('id_expected_completion_date');
+    const installFeedback = document.getElementById('expectedInstallationFeedback');
+    const completeFeedback = document.getElementById('expectedCompletionFeedback');
+
+    function syncDateConstraints(notify = false) {
+      if (!bookingDateInput) return;
+      const bookingVal = bookingDateInput.value;
+
+      // 1. Expected Installation Date min = Booking Date
+      if (expectedInstallInput) {
+        if (bookingVal) {
+          expectedInstallInput.min = bookingVal;
+          if (expectedInstallInput.value && expectedInstallInput.value < bookingVal) {
+            expectedInstallInput.value = '';
+            expectedInstallInput.classList.add('is-invalid');
+            if (installFeedback) {
+              installFeedback.className = 'small text-danger mt-1 fw-medium';
+              installFeedback.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>Installation date cannot be earlier than booking date (' + bookingVal + ').';
+              installFeedback.classList.remove('d-none');
+            }
+            if (notify && window.SolarToast) {
+              SolarToast.error('Expected Installation Date cannot be earlier than Booking Date (' + bookingVal + ').', 'Date Constraint');
+            }
+          } else {
+            expectedInstallInput.classList.remove('is-invalid');
+            if (installFeedback) installFeedback.classList.add('d-none');
+          }
+        } else {
+          expectedInstallInput.removeAttribute('min');
+        }
+      }
+
+      // 2. Expected Completion Date min = Installation Date (if set) OR Booking Date
+      if (expectedCompleteInput) {
+        const installVal = expectedInstallInput ? expectedInstallInput.value : '';
+        const minDateForCompletion = installVal || bookingVal;
+
+        if (minDateForCompletion) {
+          expectedCompleteInput.min = minDateForCompletion;
+          if (expectedCompleteInput.value && expectedCompleteInput.value < minDateForCompletion) {
+            expectedCompleteInput.value = '';
+            expectedCompleteInput.classList.add('is-invalid');
+            if (completeFeedback) {
+              completeFeedback.className = 'small text-danger mt-1 fw-medium';
+              const reasonText = installVal ? 'installation date (' + installVal + ')' : 'booking date (' + bookingVal + ')';
+              completeFeedback.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-1"></i>Completion date cannot be earlier than ' + reasonText + '.';
+              completeFeedback.classList.remove('d-none');
+            }
+            if (notify && window.SolarToast) {
+              const reason = installVal ? 'Installation Date (' + installVal + ')' : 'Booking Date (' + bookingVal + ')';
+              SolarToast.error('Expected Completion Date cannot be earlier than ' + reason + '.', 'Date Constraint');
+            }
+          } else {
+            expectedCompleteInput.classList.remove('is-invalid');
+            if (completeFeedback) completeFeedback.classList.add('d-none');
+          }
+        } else {
+          expectedCompleteInput.removeAttribute('min');
+        }
+      }
+    }
+
+    if (bookingDateInput) {
+      bookingDateInput.addEventListener('change', () => syncDateConstraints(true));
+      bookingDateInput.addEventListener('input', () => syncDateConstraints(false));
+    }
+    if (expectedInstallInput) {
+      expectedInstallInput.addEventListener('change', () => syncDateConstraints(true));
+      expectedInstallInput.addEventListener('input', () => syncDateConstraints(false));
+    }
+    if (expectedCompleteInput) {
+      expectedCompleteInput.addEventListener('change', () => syncDateConstraints(true));
+      expectedCompleteInput.addEventListener('input', () => syncDateConstraints(false));
+    }
+
+    // Form submission safety guard
+    const mainBookingForm = document.querySelector('form.needs-validation') || document.querySelector('form[method="post"]');
+    if (mainBookingForm) {
+      mainBookingForm.addEventListener('submit', function(e) {
+        if (!bookingDateInput) return;
+        const bVal = bookingDateInput.value;
+        const iVal = expectedInstallInput ? expectedInstallInput.value : '';
+        const cVal = expectedCompleteInput ? expectedCompleteInput.value : '';
+
+        if (bVal && iVal && iVal < bVal) {
+          e.preventDefault();
+          expectedInstallInput.focus();
+          expectedInstallInput.classList.add('is-invalid');
+          if (window.SolarToast) {
+            SolarToast.error('Installation date (' + iVal + ') cannot be before booking date (' + bVal + ').', 'Invalid Schedule');
+          }
+          return false;
+        }
+
+        if (bVal && cVal && cVal < bVal) {
+          e.preventDefault();
+          expectedCompleteInput.focus();
+          expectedCompleteInput.classList.add('is-invalid');
+          if (window.SolarToast) {
+            SolarToast.error('Completion date (' + cVal + ') cannot be before booking date (' + bVal + ').', 'Invalid Schedule');
+          }
+          return false;
+        }
+
+        if (iVal && cVal && cVal < iVal) {
+          e.preventDefault();
+          expectedCompleteInput.focus();
+          expectedCompleteInput.classList.add('is-invalid');
+          if (window.SolarToast) {
+            SolarToast.error('Completion date (' + cVal + ') cannot be before installation date (' + iVal + ').', 'Invalid Schedule');
+          }
+          return false;
+        }
+      });
+    }
+
+    // Run initial sync on page load
+    syncDateConstraints(false);
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    const totalInput = document.getElementById('id_booking_amount');
+    const advanceInput = document.getElementById('id_advance_payment');
+
+    if (totalInput) totalInput.addEventListener('input', calculateSolarBalance);
+    if (advanceInput) advanceInput.addEventListener('input', calculateSolarBalance);
+    calculateSolarBalance();
+
+    // =========================================================================
+    // INTERACTIVE ACCESSORIES & SAFETY GEAR ENGINE
+    // =========================================================================
+    const accessoriesContainer = document.getElementById('accessoriesContainer');
+    const hiddenAccessoriesInput = document.querySelector('input[name="required_accessories"]');
+    const customAccessoryInput = document.getElementById('customAccessoryInput');
+    const btnAddCustomAccessory = document.getElementById('btnAddCustomAccessory');
+    const accessoriesCountBadge = document.getElementById('accessoriesCountBadge');
+    const shelfButtons = document.querySelectorAll('.accessory-shelf-btn');
+
+    let activeAccessories = [];
+
+    // Parse initial accessories from hidden input (if editing booking or pre-filled)
+    if (hiddenAccessoriesInput && hiddenAccessoriesInput.value.trim() !== '') {
+      activeAccessories = hiddenAccessoriesInput.value
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+    } else {
+      // Do not pre-fill any accessories
+      activeAccessories = [];
+    }
+
+    function renderAccessories() {
+      if (!accessoriesContainer) return;
+
+      if (activeAccessories.length === 0) {
+        accessoriesContainer.innerHTML = '<span class="text-muted small ps-1" style="font-size: 0.76rem;">No accessories selected. Use the quick-add buttons below or type custom gear.</span>';
+      } else {
+        let html = '';
+        activeAccessories.forEach((item, index) => {
+          html += `
+            <span class="badge rounded-1 fw-medium d-inline-flex align-items-center gap-1 accessory-pill" data-index="${index}" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; font-size: 0.76rem; padding: 0.3rem 0.55rem;">
+              <span>${escapeHtml(item)}</span>
+              <i class="bi bi-x-circle-fill text-muted remove-pill" style="cursor: pointer; font-size: 0.72rem;" title="Remove ${escapeHtml(item)}"></i>
+            </span>
+          `;
+        });
+        accessoriesContainer.innerHTML = html;
+
+        // Attach remove click listener to each pill
+        accessoriesContainer.querySelectorAll('.remove-pill').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const idx = parseInt(this.closest('.accessory-pill').getAttribute('data-index'), 10);
+            if (!isNaN(idx) && idx >= 0 && idx < activeAccessories.length) {
+              activeAccessories.splice(idx, 1);
+              updateAccessoriesState();
+            }
+          });
+        });
+      }
+
+      updateAccessoriesState(false);
+    }
+
+    function updateAccessoriesState(reRender = true) {
+      // Sync hidden input
+      if (hiddenAccessoriesInput) {
+        hiddenAccessoriesInput.value = activeAccessories.join(', ');
+      }
+
+      // Update count badge
+      if (accessoriesCountBadge) {
+        accessoriesCountBadge.textContent = `${activeAccessories.length} item${activeAccessories.length === 1 ? '' : 's'} selected`;
+      }
+
+      // Sync quick shelf buttons (highlight if active)
+      shelfButtons.forEach(btn => {
+        const tag = btn.getAttribute('data-tag') || btn.getAttribute('data-accessory-name') || '';
+        const isActive = activeAccessories.some(a => a.toLowerCase() === tag.toLowerCase());
+        if (isActive) {
+          btn.classList.remove('btn-outline-secondary');
+          btn.classList.add('btn-solar-primary', 'active');
+          btn.innerHTML = `<i class="bi bi-check-lg me-1"></i>${escapeHtml(tag)}`;
+        } else {
+          btn.classList.remove('btn-solar-primary', 'active');
+          btn.classList.add('btn-outline-secondary');
+          btn.innerHTML = `+ ${escapeHtml(tag)}`;
+        }
+      });
+
+      if (reRender) {
+        renderAccessories();
+      }
+    }
+
+    function addAccessory(name) {
+      const trimmed = (name || '').trim();
+      if (!trimmed) return;
+      const already = activeAccessories.some(a => a.toLowerCase() === trimmed.toLowerCase());
+      if (!already) {
+        activeAccessories.push(trimmed);
+        updateAccessoriesState(true);
+      }
+    }
+
+    function removeAccessory(name) {
+      const trimmed = (name || '').trim().toLowerCase();
+      activeAccessories = activeAccessories.filter(a => a.toLowerCase() !== trimmed);
+      updateAccessoriesState(true);
+    }
+
+    shelfButtons.forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const tag = this.getAttribute('data-tag');
+        const isActive = activeAccessories.some(a => a.toLowerCase() === tag.toLowerCase());
+        if (isActive) {
+          removeAccessory(tag);
+        } else {
+          addAccessory(tag);
+        }
+      });
+    });
+
+    if (btnAddCustomAccessory && customAccessoryInput) {
+      function handleAddCustom() {
+        const val = customAccessoryInput.value.trim();
+        if (val) {
+          addAccessory(val);
+          syncCatalogItem('ACCESSORY', val);
+          customAccessoryInput.value = '';
+          customAccessoryInput.focus();
+        }
+      }
+
+      btnAddCustomAccessory.addEventListener('click', function(e) {
+        e.preventDefault();
+        handleAddCustom();
+      });
+
+      customAccessoryInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAddCustom();
+        }
+      });
+    }
+
+    renderAccessories();
+
+    // Strictly Forward Real-Time System Capacity Calculator (Readonly Total Power)
+    const wattageInput = document.getElementById('id_panel_wattage');
+    const panelCountInput = document.getElementById('id_number_of_panels');
+    const capacityInput = document.getElementById('id_system_capacity_kw');
+    const calcLiveText = document.getElementById('capacityCalcText');
+
+    function updateCapacityFromPanels() {
+      const w = parseFloat(wattageInput ? wattageInput.value : 0) || 0;
+      const count = parseInt(panelCountInput ? panelCountInput.value : 0, 10) || 0;
+      if (w > 0 && count > 0) {
+        const totalKw = ((w * count) / 1000.0).toFixed(2);
+        if (capacityInput) {
+          capacityInput.value = totalKw;
+        }
+        if (calcLiveText) {
+          calcLiveText.innerHTML = `${count} Panels × ${w}W = <strong class="text-success fs-6">${totalKw} kW</strong>`;
+        }
+      } else {
+        if (capacityInput) {
+          capacityInput.value = "0.00";
+        }
+        if (calcLiveText) {
+          calcLiveText.innerHTML = `${count} Panels × ${w}W = <strong class="text-secondary">0.00 kW</strong>`;
+        }
+      }
+    }
+
+    if (wattageInput) {
+      wattageInput.addEventListener('input', updateCapacityFromPanels);
+      wattageInput.addEventListener('change', updateCapacityFromPanels);
+    }
+    if (panelCountInput) {
+      panelCountInput.addEventListener('input', updateCapacityFromPanels);
+      panelCountInput.addEventListener('change', updateCapacityFromPanels);
+    }
+
+    // Lock capacityInput strictly as readonly
+    if (capacityInput) {
+      capacityInput.setAttribute('readonly', 'readonly');
+      capacityInput.setAttribute('tabindex', '-1');
+      capacityInput.style.cursor = 'not-allowed';
+      capacityInput.style.backgroundColor = '#f8fafc';
+    }
+
+    // Quick Wattage Preset Buttons
+    document.querySelectorAll('.wattage-preset-pill').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const val = this.getAttribute('data-wattage');
+        if (wattageInput) {
+          wattageInput.value = val;
+          updateCapacityFromPanels();
+        }
+      });
+    });
+
+    // Custom Panel Brand handler
+    const brandSelect = document.getElementById('id_panel_brand');
+    const customBrandWrapper = document.getElementById('customBrandWrapper');
+    const customBrandInput = document.getElementById('id_custom_panel_brand');
+    const btnToggleCustomBrand = document.getElementById('btnToggleCustomBrand');
+    const btnCloseCustomBrand = document.getElementById('btnCloseCustomBrand');
+    const btnApplyNewBrand = document.getElementById('btnApplyNewBrand');
+    const customBrandFeedback = document.getElementById('customBrandFeedback');
+
+    function checkBrandSelect() {
+      if (!brandSelect || !customBrandWrapper) return;
+      if (brandSelect.value === 'Custom Panel Brand') {
+        customBrandWrapper.style.display = 'block';
+        if (customBrandInput) customBrandInput.focus();
+      } else {
+        customBrandWrapper.style.display = 'none';
+      }
+    }
+
+    if (brandSelect) {
+      brandSelect.addEventListener('change', checkBrandSelect);
+      checkBrandSelect();
+    }
+
+    if (btnToggleCustomBrand) {
+      btnToggleCustomBrand.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (brandSelect) brandSelect.value = 'Custom Panel Brand';
+        if (customBrandWrapper) customBrandWrapper.style.display = 'block';
+        if (customBrandInput) customBrandInput.focus();
+      });
+    }
+
+    if (btnCloseCustomBrand) {
+      btnCloseCustomBrand.addEventListener('click', function() {
+        if (customBrandWrapper) customBrandWrapper.style.display = 'none';
+        if (brandSelect && brandSelect.value === 'Custom Panel Brand') {
+          brandSelect.selectedIndex = 0;
+        }
+      });
+    }
+
+    function addCustomBrandOption() {
+      if (!customBrandInput || !brandSelect) return;
+      const val = customBrandInput.value.trim();
+      if (!val) {
+        customBrandInput.classList.add('is-invalid');
+        return;
+      }
+      customBrandInput.classList.remove('is-invalid');
+      syncCatalogItem('PANEL_BRAND', val);
+
+      let existingOpt = null;
+      for (let i = 0; i < brandSelect.options.length; i++) {
+        if (brandSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = brandSelect.options[i];
+          break;
+        }
+      }
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = Math.max(0, brandSelect.options.length - 1);
+        brandSelect.add(newOpt, insertIndex);
+        brandSelect.value = val;
+      } else {
+        brandSelect.value = existingOpt.value;
+      }
+      if (customBrandFeedback) {
+        customBrandFeedback.className = 'small text-success mt-1 fw-medium';
+        customBrandFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${val}"`;
+      }
+      setTimeout(() => {
+        if (customBrandWrapper && brandSelect.value !== 'Custom Panel Brand') {
+          customBrandWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewBrand) {
+      btnApplyNewBrand.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomBrandOption();
+      });
+    }
+
+    if (customBrandInput) {
+      customBrandInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomBrandOption();
+        }
+      });
+    }
+
+    // Custom Panel Technology handler
+    const techSelect = document.getElementById('id_panel_tech');
+    const customTechWrapper = document.getElementById('customTechWrapper');
+    const customTechInput = document.getElementById('id_custom_panel_tech');
+    const btnToggleCustomTech = document.getElementById('btnToggleCustomTech');
+    const btnCloseCustomTech = document.getElementById('btnCloseCustomTech');
+    const btnApplyNewTech = document.getElementById('btnApplyNewTech');
+    const customTechFeedback = document.getElementById('customTechFeedback');
+
+    function checkTechSelect() {
+      if (!techSelect || !customTechWrapper) return;
+      if (techSelect.value === 'Custom Panel Tech') {
+        customTechWrapper.style.display = 'block';
+        if (customTechInput) customTechInput.focus();
+      } else {
+        customTechWrapper.style.display = 'none';
+      }
+    }
+
+    if (techSelect) {
+      techSelect.addEventListener('change', checkTechSelect);
+      checkTechSelect();
+    }
+
+    if (btnToggleCustomTech) {
+      btnToggleCustomTech.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (techSelect) techSelect.value = 'Custom Panel Tech';
+        if (customTechWrapper) customTechWrapper.style.display = 'block';
+        if (customTechInput) customTechInput.focus();
+      });
+    }
+
+    if (btnCloseCustomTech) {
+      btnCloseCustomTech.addEventListener('click', function() {
+        if (customTechWrapper) customTechWrapper.style.display = 'none';
+        if (techSelect && techSelect.value === 'Custom Panel Tech') {
+          techSelect.selectedIndex = 0;
+        }
+      });
+    }
+
+    function addCustomTechOption() {
+      if (!customTechInput || !techSelect) return;
+      const val = customTechInput.value.trim();
+      if (!val) {
+        customTechInput.classList.add('is-invalid');
+        return;
+      }
+      customTechInput.classList.remove('is-invalid');
+      syncCatalogItem('PANEL_TECH', val);
+
+      let existingOpt = null;
+      for (let i = 0; i < techSelect.options.length; i++) {
+        if (techSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = techSelect.options[i];
+          break;
+        }
+      }
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = Math.max(0, techSelect.options.length - 1);
+        techSelect.add(newOpt, insertIndex);
+        techSelect.value = val;
+      } else {
+        techSelect.value = existingOpt.value;
+      }
+      if (customTechFeedback) {
+        customTechFeedback.className = 'small text-success mt-1 fw-medium';
+        customTechFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${val}"`;
+      }
+      setTimeout(() => {
+        if (customTechWrapper && techSelect.value !== 'Custom Panel Tech') {
+          customTechWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewTech) {
+      btnApplyNewTech.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomTechOption();
+      });
+    }
+
+    if (customTechInput) {
+      customTechInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomTechOption();
+        }
+      });
+    }
+
+    // Trigger initial calculation
+    updateCapacityFromPanels();
+
+    // Custom Panel Model / Wattage handler
+    const panelSelect = document.getElementById('id_panel_type');
+    const customPanelWrapper = document.getElementById('customPanelWrapper');
+    const customPanelInput = document.getElementById('id_custom_panel_name');
+    const btnToggleCustomPanel = document.getElementById('btnToggleCustomPanel');
+    const btnCloseCustomPanel = document.getElementById('btnCloseCustomPanel');
+    const btnApplyNewPanel = document.getElementById('btnApplyNewPanel');
+    const customPanelFeedback = document.getElementById('customPanelFeedback');
+
+    function checkPanelSelect() {
+      if (!panelSelect || !customPanelWrapper) return;
+      if (panelSelect.value === 'Custom Solar Module Spec') {
+        customPanelWrapper.style.display = 'block';
+        if (customPanelInput) {
+          customPanelInput.focus();
+        }
+      } else {
+        customPanelWrapper.style.display = 'none';
+      }
+    }
+
+    if (panelSelect) {
+      panelSelect.addEventListener('change', checkPanelSelect);
+      checkPanelSelect();
+    }
+
+    if (btnToggleCustomPanel) {
+      btnToggleCustomPanel.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (panelSelect) {
+          panelSelect.value = 'Custom Solar Module Spec';
+        }
+        if (customPanelWrapper) {
+          customPanelWrapper.style.display = 'block';
+        }
+        if (customPanelInput) {
+          customPanelInput.focus();
+        }
+      });
+    }
+
+    if (btnCloseCustomPanel) {
+      btnCloseCustomPanel.addEventListener('click', function() {
+        if (customPanelWrapper) customPanelWrapper.style.display = 'none';
+        if (panelSelect && panelSelect.value === 'Custom Solar Module Spec') {
+          if (panelSelect.options.length > 0) {
+            panelSelect.selectedIndex = 0;
+          }
+        }
+      });
+    }
+
+    function syncCatalogItem(category, name) {
+      if (!name) return;
+      const csrfEl = document.querySelector('input[name="csrfmiddlewaretoken"]');
+      const token = csrfEl ? csrfEl.value : '';
+      fetch('/api/catalog/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': token,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+          'category': category,
+          'name': name
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success' && data.created && window.SolarToast) {
+          SolarToast.success(`"${name}" added to Master Catalog!`, 'Catalog Updated');
+        }
+      })
+      .catch(err => console.log('Catalog auto-sync error:', err));
+    }
+
+    function addCustomPanelOption() {
+      if (!customPanelInput || !panelSelect) return;
+      const val = customPanelInput.value.trim();
+      if (!val) {
+        customPanelInput.classList.add('is-invalid');
+        if (customPanelFeedback) {
+          customPanelFeedback.className = 'small text-danger mt-1';
+          customPanelFeedback.textContent = 'Please enter the panel model and wattage.';
+        }
+        return;
+      }
+      customPanelInput.classList.remove('is-invalid');
+
+      // Auto-sync into master catalog
+      syncCatalogItem('PANEL', val);
+
+      // Check if option already exists
+      let existingOpt = null;
+      for (let i = 0; i < panelSelect.options.length; i++) {
+        if (panelSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = panelSelect.options[i];
+          break;
+        }
+      }
+
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = panelSelect.options.length - 1;
+        for (let i = 0; i < panelSelect.options.length; i++) {
+          if (panelSelect.options[i].value === 'Custom Solar Module Spec') {
+            insertIndex = i;
+            break;
+          }
+        }
+        panelSelect.add(newOpt, insertIndex);
+        panelSelect.value = val;
+      } else {
+        panelSelect.value = existingOpt.value;
+      }
+
+      if (customPanelFeedback) {
+        customPanelFeedback.className = 'small text-success mt-1 fw-medium';
+        customPanelFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${val}"`;
+      }
+      setTimeout(() => {
+        if (customPanelWrapper && panelSelect.value !== 'Custom Solar Module Spec') {
+          customPanelWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewPanel) {
+      btnApplyNewPanel.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomPanelOption();
+      });
+    }
+
+    if (customPanelInput) {
+      customPanelInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomPanelOption();
+        }
+      });
+    }
+
+    // Custom Mounting Structure Type handler
+    const mountSelect = document.getElementById('id_installation_type');
+    const customMountWrapper = document.getElementById('customMountWrapper');
+    const customMountInput = document.getElementById('id_custom_installation_type');
+    const btnToggleCustomMount = document.getElementById('btnToggleCustomMount');
+    const btnCloseCustomMount = document.getElementById('btnCloseCustomMount');
+    const btnApplyNewMount = document.getElementById('btnApplyNewMount');
+    const customMountFeedback = document.getElementById('customMountFeedback');
+
+    function checkMountSelect() {
+      if (!mountSelect || !customMountWrapper) return;
+      if (mountSelect.value === 'OTHER') {
+        customMountWrapper.style.display = 'block';
+        if (customMountInput) {
+          customMountInput.focus();
+        }
+      } else {
+        customMountWrapper.style.display = 'none';
+      }
+    }
+
+    if (mountSelect) {
+      mountSelect.addEventListener('change', checkMountSelect);
+      checkMountSelect();
+    }
+
+    if (btnToggleCustomMount) {
+      btnToggleCustomMount.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (mountSelect) {
+          mountSelect.value = 'OTHER';
+        }
+        if (customMountWrapper) {
+          customMountWrapper.style.display = 'block';
+        }
+        if (customMountInput) {
+          customMountInput.focus();
+        }
+      });
+    }
+
+    if (btnCloseCustomMount) {
+      btnCloseCustomMount.addEventListener('click', function() {
+        if (customMountWrapper) customMountWrapper.style.display = 'none';
+        if (mountSelect && mountSelect.value === 'OTHER') {
+          if (mountSelect.options.length > 0) {
+            mountSelect.selectedIndex = 0;
+          }
+        }
+      });
+    }
+
+    function addCustomMountOption() {
+      if (!customMountInput || !mountSelect) return;
+      const val = customMountInput.value.trim();
+      if (!val) {
+        customMountInput.classList.add('is-invalid');
+        if (customMountFeedback) {
+          customMountFeedback.className = 'small text-danger mt-1';
+          customMountFeedback.textContent = 'Please enter the custom mounting structure.';
+        }
+        return;
+      }
+      customMountInput.classList.remove('is-invalid');
+
+      // Auto-sync into master catalog
+      syncCatalogItem('MOUNTING', val);
+
+      // Check if option already exists
+      let existingOpt = null;
+      for (let i = 0; i < mountSelect.options.length; i++) {
+        if (mountSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = mountSelect.options[i];
+          break;
+        }
+      }
+
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = mountSelect.options.length - 1;
+        for (let i = 0; i < mountSelect.options.length; i++) {
+          if (mountSelect.options[i].value === 'OTHER') {
+            insertIndex = i;
+            break;
+          }
+        }
+        mountSelect.add(newOpt, insertIndex);
+        mountSelect.value = val;
+      } else {
+        mountSelect.value = existingOpt.value;
+      }
+
+      if (customMountFeedback) {
+        customMountFeedback.className = 'small text-success mt-1 fw-medium';
+        customMountFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${val}"`;
+      }
+      setTimeout(() => {
+        if (customMountWrapper && mountSelect.value !== 'OTHER') {
+          customMountWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewMount) {
+      btnApplyNewMount.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomMountOption();
+      });
+    }
+
+    if (customMountInput) {
+      customMountInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomMountOption();
+        }
+      });
+    }
+
+    // Custom Inverter Model / Rating handler
+    const inverterSelect = document.getElementById('id_inverter_type');
+    const customInverterWrapper = document.getElementById('customInverterWrapper');
+    const customInverterInput = document.getElementById('id_custom_inverter_name');
+    const btnToggleCustomInverter = document.getElementById('btnToggleCustomInverter');
+    const btnCloseCustomInverter = document.getElementById('btnCloseCustomInverter');
+    const btnApplyNewInverter = document.getElementById('btnApplyNewInverter');
+    const customInverterFeedback = document.getElementById('customInverterFeedback');
+
+    function checkInverterSelect() {
+      if (!inverterSelect || !customInverterWrapper) return;
+      if (inverterSelect.value === 'Custom Inverter Spec') {
+        customInverterWrapper.style.display = 'block';
+        if (customInverterInput) customInverterInput.focus();
+      } else {
+        customInverterWrapper.style.display = 'none';
+      }
+    }
+
+    if (inverterSelect) {
+      inverterSelect.addEventListener('change', checkInverterSelect);
+      checkInverterSelect();
+    }
+
+    if (btnToggleCustomInverter) {
+      btnToggleCustomInverter.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (inverterSelect) inverterSelect.value = 'Custom Inverter Spec';
+        if (customInverterWrapper) customInverterWrapper.style.display = 'block';
+        if (customInverterInput) customInverterInput.focus();
+      });
+    }
+
+    if (btnCloseCustomInverter) {
+      btnCloseCustomInverter.addEventListener('click', function() {
+        if (customInverterWrapper) customInverterWrapper.style.display = 'none';
+        if (inverterSelect && inverterSelect.value === 'Custom Inverter Spec') {
+          if (inverterSelect.options.length > 0) inverterSelect.selectedIndex = 0;
+        }
+      });
+    }
+
+    function addCustomInverterOption() {
+      if (!customInverterInput || !inverterSelect) return;
+      const val = customInverterInput.value.trim();
+      if (!val) {
+        customInverterInput.classList.add('is-invalid');
+        if (customInverterFeedback) {
+          customInverterFeedback.className = 'small text-danger mt-1';
+          customInverterFeedback.textContent = 'Please enter the inverter model & rating.';
+        }
+        return;
+      }
+      customInverterInput.classList.remove('is-invalid');
+
+      // Auto-sync into master catalog
+      syncCatalogItem('INVERTER', val);
+
+      let existingOpt = null;
+      for (let i = 0; i < inverterSelect.options.length; i++) {
+        if (inverterSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = inverterSelect.options[i];
+          break;
+        }
+      }
+
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = inverterSelect.options.length - 1;
+        for (let i = 0; i < inverterSelect.options.length; i++) {
+          if (inverterSelect.options[i].value === 'Custom Inverter Spec') {
+            insertIndex = i;
+            break;
+          }
+        }
+        inverterSelect.add(newOpt, insertIndex);
+        inverterSelect.value = val;
+      } else {
+        inverterSelect.value = existingOpt.value;
+      }
+
+      if (customInverterFeedback) {
+        customInverterFeedback.className = 'small text-success mt-1 fw-medium';
+        customInverterFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${escapeHtml(val)}"`;
+      }
+      setTimeout(() => {
+        if (customInverterWrapper && inverterSelect.value !== 'Custom Inverter Spec') {
+          customInverterWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewInverter) {
+      btnApplyNewInverter.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomInverterOption();
+      });
+    }
+
+    if (customInverterInput) {
+      customInverterInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomInverterOption();
+        }
+      });
+    }
+
+    // Custom Assigned Team / Crew handler
+    const teamSelect = document.getElementById('id_assigned_team_driver');
+    const customTeamWrapper = document.getElementById('customTeamWrapper');
+    const customTeamInput = document.getElementById('id_custom_team_name');
+    const btnToggleCustomTeam = document.getElementById('btnToggleCustomTeam');
+    const btnCloseCustomTeam = document.getElementById('btnCloseCustomTeam');
+    const btnApplyNewTeam = document.getElementById('btnApplyNewTeam');
+    const customTeamFeedback = document.getElementById('customTeamFeedback');
+
+    function checkTeamSelect() {
+      if (!teamSelect || !customTeamWrapper) return;
+      if (teamSelect.value === 'Custom Team Spec') {
+        customTeamWrapper.style.display = 'block';
+        if (customTeamInput) customTeamInput.focus();
+      } else {
+        customTeamWrapper.style.display = 'none';
+      }
+    }
+
+    if (teamSelect) {
+      teamSelect.addEventListener('change', checkTeamSelect);
+      checkTeamSelect();
+    }
+
+    if (btnToggleCustomTeam) {
+      btnToggleCustomTeam.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (teamSelect) teamSelect.value = 'Custom Team Spec';
+        if (customTeamWrapper) customTeamWrapper.style.display = 'block';
+        if (customTeamInput) customTeamInput.focus();
+      });
+    }
+
+    if (btnCloseCustomTeam) {
+      btnCloseCustomTeam.addEventListener('click', function() {
+        if (customTeamWrapper) customTeamWrapper.style.display = 'none';
+        if (teamSelect && teamSelect.value === 'Custom Team Spec') {
+          if (teamSelect.options.length > 0) teamSelect.selectedIndex = 0;
+        }
+      });
+    }
+
+    function addCustomTeamOption() {
+      if (!customTeamInput || !teamSelect) return;
+      const val = customTeamInput.value.trim();
+      if (!val) {
+        customTeamInput.classList.add('is-invalid');
+        if (customTeamFeedback) {
+          customTeamFeedback.className = 'small text-danger mt-1';
+          customTeamFeedback.textContent = 'Please enter the team or crew name.';
+        }
+        return;
+      }
+      customTeamInput.classList.remove('is-invalid');
+
+      let existingOpt = null;
+      for (let i = 0; i < teamSelect.options.length; i++) {
+        if (teamSelect.options[i].value.toLowerCase() === val.toLowerCase()) {
+          existingOpt = teamSelect.options[i];
+          break;
+        }
+      }
+
+      if (!existingOpt) {
+        const newOpt = new Option(val, val, true, true);
+        let insertIndex = teamSelect.options.length - 1;
+        for (let i = 0; i < teamSelect.options.length; i++) {
+          if (teamSelect.options[i].value === 'Custom Team Spec') {
+            insertIndex = i;
+            break;
+          }
+        }
+        teamSelect.add(newOpt, insertIndex);
+        teamSelect.value = val;
+      } else {
+        teamSelect.value = existingOpt.value;
+      }
+
+      if (customTeamFeedback) {
+        customTeamFeedback.className = 'small text-success mt-1 fw-medium';
+        customTeamFeedback.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Selected: "${escapeHtml(val)}"`;
+      }
+      setTimeout(() => {
+        if (customTeamWrapper && teamSelect.value !== 'Custom Team Spec') {
+          customTeamWrapper.style.display = 'none';
+        }
+      }, 700);
+    }
+
+    if (btnApplyNewTeam) {
+      btnApplyNewTeam.addEventListener('click', function(e) {
+        e.preventDefault();
+        addCustomTeamOption();
+      });
+    }
+
+    if (customTeamInput) {
+      customTeamInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addCustomTeamOption();
+        }
+      });
+    }
+
+    // Intercept form submit to ensure custom fields are added even if user didn't click "Add to List"
+    const bookingForm = document.querySelector('form[method="post"]:not(#quickCustomerForm)');
+    if (bookingForm) {
+      bookingForm.addEventListener('submit', function(e) {
+        if (brandSelect && brandSelect.value === 'Custom Panel Brand' && customBrandInput) {
+          const val = customBrandInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            brandSelect.add(opt, undefined);
+            brandSelect.value = val;
+          }
+        }
+        if (techSelect && techSelect.value === 'Custom Panel Tech' && customTechInput) {
+          const val = customTechInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            techSelect.add(opt, undefined);
+            techSelect.value = val;
+          }
+        }
+        if (panelSelect && panelSelect.value === 'Custom Solar Module Spec' && customPanelInput) {
+          const val = customPanelInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            panelSelect.add(opt, undefined);
+            panelSelect.value = val;
+          }
+        }
+        if (mountSelect && mountSelect.value === 'OTHER' && customMountInput) {
+          const val = customMountInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            mountSelect.add(opt, undefined);
+            mountSelect.value = val;
+          }
+        }
+        if (inverterSelect && inverterSelect.value === 'Custom Inverter Spec' && customInverterInput) {
+          const val = customInverterInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            inverterSelect.add(opt, undefined);
+            inverterSelect.value = val;
+          }
+        }
+        if (teamSelect && teamSelect.value === 'Custom Team Spec' && customTeamInput) {
+          const val = customTeamInput.value.trim();
+          if (val) {
+            let opt = new Option(val, val, true, true);
+            teamSelect.add(opt, undefined);
+            teamSelect.value = val;
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // SEARCH & SELECT CUSTOMER COMBOBOX WITH INLINE QUICK-CREATE
+    // =========================================================================
+    const customerSelect = document.getElementById('id_customer_select');
+    const customerCombobox = document.getElementById('customerCombobox');
+    const comboboxSelectedCard = document.getElementById('comboboxSelectedCard');
+    const comboboxInputWrapper = document.getElementById('comboboxInputWrapper');
+    const customerSearchInput = document.getElementById('customerSearchInput');
+    const btnClearCustomerSearch = document.getElementById('btnClearCustomerSearch');
+    const comboboxDropdown = document.getElementById('comboboxDropdown');
+    const comboboxItemsList = document.getElementById('comboboxItemsList');
+    const btnChangeCustomer = document.getElementById('btnChangeCustomer');
+    const selectedCustomerAvatar = document.getElementById('selectedCustomerAvatar');
+    const selectedCustomerName = document.getElementById('selectedCustomerName');
+    const selectedCustomerSub = document.getElementById('selectedCustomerSub');
+    const btnComboboxOpenModal = document.getElementById('btnComboboxOpenModal');
+    const quickModalEl = document.getElementById('quickCustomerModal');
+    const quickCustomerNameInput = document.getElementById('quick_customer_name');
+    const quickCustomerPhoneInput = document.getElementById('quick_customer_phone');
+
+    if (customerSelect && customerSearchInput) {
+      let customerList = [];
+      let currentMatches = [];
+      let activeIndex = -1;
+
+      function parseCustomersFromSelect() {
+        customerList = [];
+        for (let i = 0; i < customerSelect.options.length; i++) {
+          const opt = customerSelect.options[i];
+          if (!opt.value) continue;
+          
+          const rawText = opt.textContent.trim();
+          // Extract Name and (Code) if present, e.g. "ANAS BCA (CUST-1012)"
+          const match = rawText.match(/^(.*?)(?:\s*\((.*?)\))?$/);
+          const name = match && match[1] ? match[1].trim() : rawText;
+          const code = match && match[2] ? match[2].trim() : '';
+          const initial = name.charAt(0).toUpperCase() || 'C';
+
+          customerList.push({
+            id: String(opt.value),
+            rawText: rawText,
+            name: name,
+            code: code,
+            phone: '',
+            email: '',
+            city: '',
+            initial: initial
+          });
+        }
+      }
+
+      function parseCustomers() {
+        const jsonEl = document.getElementById('customerDataJson');
+        if (jsonEl && jsonEl.textContent.trim()) {
+          try {
+            const parsed = JSON.parse(jsonEl.textContent.trim());
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              customerList = parsed.map(c => ({
+                id: String(c.id),
+                name: c.name || '',
+                code: c.code || '',
+                phone: c.phone || '',
+                email: c.email || '',
+                city: c.city || '',
+                consumer_number: c.consumer_number || '',
+                house_building: c.house_building || '',
+                street: c.street || '',
+                state: c.state || '',
+                postal_code: c.postal_code || '',
+                coordinates: c.coordinates || '',
+                rawText: `${c.name} ${c.code} ${c.phone} ${c.email} ${c.city} ${c.consumer_number || ''}`.trim(),
+                initial: (c.name ? c.name.charAt(0).toUpperCase() : 'C') || 'C'
+              }));
+              return;
+            }
+          } catch (e) {
+            console.warn('Failed to parse customerDataJson, fallback to select options', e);
+          }
+        }
+        parseCustomersFromSelect();
+      }
+
+      function escapeHtml(str) {
+        return (str || '').replace(/[&<>"']/g, function(m) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+      }
+
+      function showSelectedCard(id, name, code) {
+        if (!name) {
+          const found = customerList.find(c => String(c.id) === String(id));
+          if (found) {
+            name = found.name;
+            code = found.code;
+          }
+        }
+        const initial = (name ? name.charAt(0).toUpperCase() : 'C') || 'C';
+        selectedCustomerAvatar.textContent = initial;
+        selectedCustomerName.textContent = name || 'Customer Selected';
+        selectedCustomerSub.textContent = code ? (code + ' • Active Account') : 'Client Account';
+
+        comboboxInputWrapper.classList.add('d-none');
+        comboboxSelectedCard.classList.remove('d-none');
+        comboboxSelectedCard.classList.add('d-flex');
+        comboboxDropdown.classList.add('d-none');
+      }
+
+      function showSearchInput() {
+        comboboxSelectedCard.classList.add('d-none');
+        comboboxSelectedCard.classList.remove('d-flex');
+        comboboxInputWrapper.classList.remove('d-none');
+        customerSearchInput.focus();
+      }
+
+      function selectCustomerById(id, name, code) {
+        customerSelect.value = id;
+        customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        showSelectedCard(id, name, code);
+
+        // Auto-fill consumer number if empty or customer has one
+        const found = customerList.find(c => String(c.id) === String(id));
+        const consumerInput = document.getElementById('id_consumer_number');
+        if (found && consumerInput && found.consumer_number) {
+          consumerInput.value = found.consumer_number;
+        }
+
+        // Note: Site installation address is intentionally not prefilled from customer profile as requested.
+      }
+
+      function openCreateModalWithName(prefillName) {
+        comboboxDropdown.classList.add('d-none');
+        const alertBox = document.getElementById('quickCustomerAlert');
+        if (alertBox) alertBox.classList.add('d-none');
+        if (quickCustomerNameInput) {
+          quickCustomerNameInput.value = prefillName || '';
+        }
+        if (quickModalEl) {
+          const modal = bootstrap.Modal.getOrCreateInstance(quickModalEl);
+          modal.show();
+        }
+      }
+
+      function updateFocusedItem(index) {
+        activeIndex = index;
+        const items = comboboxItemsList.querySelectorAll('.combobox-item');
+        items.forEach((item, idx) => {
+          if (idx === activeIndex) {
+            item.classList.add('is-focused');
+            item.scrollIntoView({ block: 'nearest' });
+          } else {
+            item.classList.remove('is-focused');
+          }
+        });
+      }
+
+      function renderDropdown(query) {
+        const q = (query || '').trim().toLowerCase();
+        currentMatches = customerList;
+
+        if (q) {
+          currentMatches = customerList.filter(c => 
+            c.name.toLowerCase().includes(q) ||
+            c.code.toLowerCase().includes(q) ||
+            c.phone.toLowerCase().includes(q) ||
+            c.city.toLowerCase().includes(q) ||
+            c.rawText.toLowerCase().includes(q)
+          );
+        }
+
+        activeIndex = currentMatches.length > 0 ? 0 : -1;
+
+        if (currentMatches.length > 0) {
+          let html = '';
+          currentMatches.forEach((c, idx) => {
+            const isCurrent = String(customerSelect.value) === String(c.id);
+            const isFocused = idx === activeIndex;
+            html += `
+              <div class="combobox-item ${isCurrent ? 'is-selected' : ''} ${isFocused ? 'is-focused' : ''}" data-index="${idx}" data-id="${c.id}" data-name="${escapeHtml(c.name)}" data-code="${escapeHtml(c.code)}">
+                <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+                  <div class="user-avatar-circle" style="width: 28px; height: 28px; font-size: 0.74rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; border-radius: 6px; flex-shrink: 0; font-weight: 600;">
+                    ${c.initial}
+                  </div>
+                  <div class="overflow-hidden">
+                    <div class="fw-semibold text-dark text-truncate" style="font-size: 0.83rem;">${escapeHtml(c.name)}</div>
+                    <div class="text-muted text-truncate font-monospace d-flex align-items-center gap-1.5" style="font-size: 0.69rem;">
+                      <span class="badge bg-light text-secondary border px-1.5 py-0.5" style="font-weight: 500; font-size: 0.67rem;">${escapeHtml(c.code || 'Registered Client')}</span>
+                      ${c.phone ? `<span class="text-secondary"><i class="bi bi-telephone text-success me-0.5"></i>${escapeHtml(c.phone)}</span>` : ''}
+                      ${c.city ? `<span class="text-muted">&bull; ${escapeHtml(c.city)}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+                ${isCurrent ? '<i class="bi bi-check2 text-success fw-bold fs-6"></i>' : '<i class="bi bi-chevron-right text-muted opacity-50" style="font-size: 0.72rem;"></i>'}
+              </div>
+            `;
+          });
+          comboboxItemsList.innerHTML = html;
+
+          // Attach listeners to items
+          comboboxItemsList.querySelectorAll('.combobox-item').forEach(item => {
+            item.addEventListener('mouseenter', function() {
+              const idx = parseInt(this.getAttribute('data-index'), 10);
+              updateFocusedItem(idx);
+            });
+            item.addEventListener('click', function() {
+              const id = this.getAttribute('data-id');
+              const name = this.getAttribute('data-name');
+              const code = this.getAttribute('data-code');
+              selectCustomerById(id, name, code);
+            });
+          });
+        } else {
+          // Zero matches found: render prompt to create this customer!
+          comboboxItemsList.innerHTML = `
+            <div class="p-3 text-center">
+              <div class="text-muted small mb-2" style="font-size: 0.78rem;">
+                <i class="bi bi-search me-1"></i> No client found matching "<strong class="text-dark">${escapeHtml(query)}</strong>"
+              </div>
+              <button type="button" class="btn btn-sm btn-solar-primary w-100 shadow-xs" id="btnCreateFromSearch">
+                <i class="bi bi-person-plus-fill me-1"></i> Add "${escapeHtml(query)}" as New Customer
+              </button>
+            </div>
+          `;
+
+          const btnCreateFromSearch = document.getElementById('btnCreateFromSearch');
+          if (btnCreateFromSearch) {
+            btnCreateFromSearch.addEventListener('click', function(e) {
+              e.preventDefault();
+              openCreateModalWithName(query.trim());
+            });
+          }
+        }
+
+        comboboxDropdown.classList.remove('d-none');
+      }
+
+      // Initialize customer list
+      parseCustomers();
+
+      // Check if already selected (e.g. edit mode or URL param)
+      if (customerSelect.value && customerSelect.value !== '') {
+        const found = customerList.find(c => String(c.id) === String(customerSelect.value));
+        if (found) {
+          showSelectedCard(found.id, found.name, found.code);
+        } else {
+          showSearchInput();
+        }
+      } else {
+        showSearchInput();
+      }
+
+      // Search input event listeners
+      customerSearchInput.addEventListener('focus', function() {
+        renderDropdown(this.value);
+      });
+
+      customerSearchInput.addEventListener('click', function() {
+        renderDropdown(this.value);
+      });
+
+      customerSearchInput.addEventListener('input', function() {
+        if (this.value.trim().length > 0) {
+          btnClearCustomerSearch.classList.remove('d-none');
+        } else {
+          btnClearCustomerSearch.classList.add('d-none');
+        }
+        renderDropdown(this.value);
+      });
+
+      customerSearchInput.addEventListener('keydown', function(e) {
+        const isDropdownOpen = !comboboxDropdown.classList.contains('d-none');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (!isDropdownOpen) {
+            renderDropdown(this.value);
+          } else if (currentMatches.length > 0) {
+            const nextIdx = (activeIndex + 1) % currentMatches.length;
+            updateFocusedItem(nextIdx);
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (isDropdownOpen && currentMatches.length > 0) {
+            const prevIdx = (activeIndex - 1 + currentMatches.length) % currentMatches.length;
+            updateFocusedItem(prevIdx);
+          }
+        } else if (e.key === 'Enter') {
+          if (isDropdownOpen) {
+            e.preventDefault();
+            if (activeIndex >= 0 && currentMatches[activeIndex]) {
+              const c = currentMatches[activeIndex];
+              selectCustomerById(c.id, c.name, c.code);
+            } else if (currentMatches.length === 1) {
+              const c = currentMatches[0];
+              selectCustomerById(c.id, c.name, c.code);
+            } else if (currentMatches.length === 0 && this.value.trim()) {
+              openCreateModalWithName(this.value.trim());
+            }
+          }
+        } else if (e.key === 'Escape') {
+          if (isDropdownOpen) {
+            e.preventDefault();
+            comboboxDropdown.classList.add('d-none');
+          }
+        }
+      });
+
+      btnClearCustomerSearch.addEventListener('click', function() {
+        customerSearchInput.value = '';
+        btnClearCustomerSearch.classList.add('d-none');
+        renderDropdown('');
+        customerSearchInput.focus();
+      });
+
+      // Change button click
+      btnChangeCustomer.addEventListener('click', function(e) {
+        e.preventDefault();
+        showSearchInput();
+        renderDropdown('');
+      });
+
+      // Pinned bottom modal trigger button
+      if (btnComboboxOpenModal) {
+        btnComboboxOpenModal.addEventListener('click', function(e) {
+          e.preventDefault();
+          openCreateModalWithName(customerSearchInput.value.trim());
+        });
+      }
+
+      // Click outside listener to close dropdown
+      document.addEventListener('click', function(e) {
+        if (!customerCombobox.contains(e.target)) {
+          comboboxDropdown.classList.add('d-none');
+        }
+      });
+
+      // Quick modal shown focus phone input if name is prefilled
+      if (quickModalEl) {
+        quickModalEl.addEventListener('shown.bs.modal', function() {
+          if (quickCustomerNameInput && quickCustomerNameInput.value.trim() !== '') {
+            if (quickCustomerPhoneInput) quickCustomerPhoneInput.focus();
+          } else {
+            if (quickCustomerNameInput) quickCustomerNameInput.focus();
+          }
+        });
+      }
+
+      // Quick Customer Form AJAX Registration (updated to sync combobox)
+      const quickForm = document.getElementById('quickCustomerForm');
+      if (quickForm) {
+        quickForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          const formData = new FormData(quickForm);
+          const submitBtn = document.getElementById('btnQuickSubmit');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Saving...';
+          }
+
+          fetch("{% url 'customers:quick_create' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Register & Select';
+            }
+            if (data.status === 'success') {
+              const newOption = new Option(data.customer.name + ' (' + data.customer.customer_id + ')', data.customer.id, true, true);
+              customerSelect.add(newOption, undefined);
+              customerSelect.value = data.customer.id;
+
+              // Insert new customer to beginning of customerList
+              const newCust = {
+                id: String(data.customer.id),
+                name: data.customer.name,
+                code: data.customer.customer_id || '',
+                phone: data.customer.phone || '',
+                email: data.customer.email || '',
+                city: data.customer.city || '',
+                consumer_number: data.customer.consumer_number || '',
+                house_building: data.customer.house_building || '',
+                street: data.customer.street || '',
+                state: data.customer.state || 'Kerala',
+                postal_code: data.customer.postal_code || '',
+                coordinates: data.customer.coordinates || '',
+                rawText: `${data.customer.name} ${data.customer.customer_id || ''} ${data.customer.phone || ''}`.trim(),
+                initial: (data.customer.name ? data.customer.name.charAt(0).toUpperCase() : 'C') || 'C'
+              };
+              customerList.unshift(newCust);
+
+              // Automatically select the new client in combobox card
+              selectCustomerById(data.customer.id, data.customer.name, data.customer.customer_id);
+
+              const modal = bootstrap.Modal.getInstance(quickModalEl);
+              if (modal) modal.hide();
+              quickForm.reset();
+              const alertBox = document.getElementById('quickCustomerAlert');
+              if (alertBox) alertBox.classList.add('d-none');
+              if (window.SolarToast) {
+                SolarToast.success(`Customer "${data.customer.name}" created and selected!`);
+              }
+            } else {
+              const alertBox = document.getElementById('quickCustomerAlert');
+              const alertText = document.getElementById('quickCustomerAlertText');
+              if (alertBox && alertText) {
+                alertText.textContent = data.message || 'Error creating customer.';
+                alertBox.classList.remove('d-none');
+              }
+              if (window.SolarToast) {
+                SolarToast.error(data.message || 'Error creating customer.', 'Validation Error');
+              }
+            }
+          })
+          .catch(err => {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Register & Select';
+            }
+            const alertBox = document.getElementById('quickCustomerAlert');
+            const alertText = document.getElementById('quickCustomerAlertText');
+            if (alertBox && alertText) {
+              alertText.textContent = 'Network or server error while registering customer. Please try again.';
+              alertBox.classList.remove('d-none');
+            }
+            if (window.SolarToast) {
+              SolarToast.error('Network or server error while registering customer.', 'Connection Error');
+            }
+          });
+        });
+      }
+
+      // Document upload rows management
+      const docRowsContainer = document.getElementById('documentRowsContainer');
+      const btnAddDocumentRow = document.getElementById('btnAddDocumentRow');
+      const btnQuickAddBillDoc = document.getElementById('btnQuickAddBillDoc');
+
+      function addDocumentRow() {
+        if (!docRowsContainer) return;
+        const newRow = document.createElement('div');
+        newRow.className = 'document-upload-row border rounded-3 p-3 bg-light position-relative shadow-2xs';
+        newRow.innerHTML = `
+          <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">
+                <i class="bi bi-tag-fill text-primary me-1"></i> Document Title
+              </label>
+              <input type="text" name="document_titles" class="form-control" placeholder="e.g. KSEB Electricity Bill, Aadhaar Card, Roof Photo">
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <label class="form-label fw-semibold small text-secondary mb-0">Select File</label>
+                <span class="text-muted" style="font-size: 0.72rem;">PDF, PNG, JPG, DOC (Max 25MB)</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <input type="file" name="document_files" class="form-control" accept=".pdf,image/*,.doc,.docx">
+                <button type="button" class="btn btn-outline-danger btn-sm px-2.5 btn-remove-doc-row" title="Remove Document">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        docRowsContainer.appendChild(newRow);
+        updateRemoveButtons();
+      }
+
+      function updateRemoveButtons() {
+        if (!docRowsContainer) return;
+        const rows = docRowsContainer.querySelectorAll('.document-upload-row');
+        rows.forEach(r => {
+          const btn = r.querySelector('.btn-remove-doc-row');
+          if (btn) {
+            btn.classList.toggle('d-none', rows.length <= 1);
+          }
+        });
+      }
+
+      if (btnAddDocumentRow) btnAddDocumentRow.addEventListener('click', addDocumentRow);
+      if (btnQuickAddBillDoc) btnQuickAddBillDoc.addEventListener('click', addDocumentRow);
+
+      if (docRowsContainer) {
+        docRowsContainer.addEventListener('click', function(e) {
+          const btn = e.target.closest('.btn-remove-doc-row');
+          if (btn) {
+            const row = btn.closest('.document-upload-row');
+            if (row && docRowsContainer.querySelectorAll('.document-upload-row').length > 1) {
+              row.remove();
+              updateRemoveButtons();
+            }
+          }
+        });
+      }
+    }
+  });
+
+
+  // Comprehensive Indian State-to-Districts Mapping
+  const STATE_DISTRICTS = {
+    "Kerala": [
+      "Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam",
+      "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Pathanamthitta",
+      "Thiruvananthapuram", "Thrissur", "Wayanad"
+    ],
+    "Tamil Nadu": [
+      "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri",
+      "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur",
+      "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris",
+      "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga",
+      "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
+      "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore",
+      "Viluppuram", "Virudhunagar"
+    ],
+    "Karnataka": [
+      "Bagalkot", "Ballari", "Belagavi", "Bengaluru Rural", "Bengaluru Urban", "Bidar",
+      "Chamarajanagar", "Chikkaballapur", "Chikkamagaluru", "Chitradurga", "Dakshina Kannada",
+      "Davanagere", "Dharwad", "Gadag", "Hassan", "Haveri", "Kalaburagi", "Kodagu", "Kolar",
+      "Koppal", "Mandya", "Mysuru", "Raichur", "Ramanagara", "Shivamogga", "Tumakuru",
+      "Udupi", "Uttara Kannada", "Vijayapura", "Yadgir"
+    ],
+    "Andhra Pradesh": [
+      "Alluri Sitharama Raju", "Anakapalli", "Ananthapuramu", "Annamayya", "Bapatla", "Chittoor",
+      "Dr. B.R. Ambedkar Konaseema", "East Godavari", "Eluru", "Guntur", "Kakinada", "Krishna",
+      "Kurnool", "Nandyal", "NTR", "Palnadu", "Parvathipuram Manyam", "Prakasam", "Srikakulam",
+      "Sri Potti Sriramulu Nellore", "Sri Sathya Sai", "Tirupati", "Visakhapatnam", "Vizianagaram",
+      "West Godavari", "YSR Kadapa"
+    ],
+    "Telangana": [
+      "Adilabad", "Bhadradri Kothagudem", "Hanamkonda", "Hyderabad", "Jagtial", "Jangaon",
+      "Jayashankar Bhupalpally", "Jogulamba Gadwal", "Kamareddy", "Karimnagar", "Khammam",
+      "Kumuram Bheem Asifabad", "Mahabubabad", "Mahabubnagar", "Mancherial", "Medak",
+      "Medchal-Malkajgiri", "Mulugu", "Nagarkurnool", "Nalgonda", "Narayanpet", "Nirmal",
+      "Nizamabad", "Peddapalli", "Rajanna Sircilla", "Rangareddy", "Sangareddy", "Siddipet",
+      "Suryapet", "Vikarabad", "Wanaparthy", "Warangal", "Yadadri Bhuvanagiri"
+    ],
+    "Maharashtra": [
+      "Ahmednagar", "Akola", "Amravati", "Beed", "Bhandara", "Buldhana", "Chandrapur",
+      "Chhatrapati Sambhajinagar", "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon",
+      "Jalna", "Kolhapur", "Latur", "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded",
+      "Nandurbar", "Nashik", "Osmanabad", "Palghar", "Parbhani", "Pune", "Raigad",
+      "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha",
+      "Washim", "Yavatmal"
+    ],
+    "Gujarat": [
+      "Ahmedabad", "Amreli", "Anand", "Aravalli", "Banaskantha", "Bharuch", "Bhavnagar",
+      "Botad", "Chhota Udaipur", "Dahod", "Dang", "Devbhoomi Dwarka", "Gandhinagar",
+      "Gir Somnath", "Jamnagar", "Junagadh", "Kheda", "Kutch", "Mahisagar", "Mehsana",
+      "Morbi", "Narmada", "Navsari", "Panchmahal", "Patan", "Porbandar", "Rajkot",
+      "Sabarkantha", "Surat", "Surendranagar", "Tapi", "Vadodara", "Valsad"
+    ],
+    "Goa": [
+      "North Goa", "South Goa"
+    ],
+    "Delhi (NCR)": [
+      "Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North East Delhi",
+      "North West Delhi", "Shahdara", "South Delhi", "South East Delhi", "South West Delhi", "West Delhi"
+    ],
+    "Rajasthan": [
+      "Ajmer", "Alwar", "Banswara", "Baran", "Barmer", "Bharatpur", "Bhilwara", "Bikaner",
+      "Bundi", "Chittorgarh", "Churu", "Dausa", "Dholpur", "Dungarpur", "Hanumangarh",
+      "Jaipur", "Jaisalmer", "Jalore", "Jhalawar", "Jhunjhunu", "Jodhpur", "Karauli",
+      "Kota", "Nagaur", "Pali", "Pratapgarh", "Rajsamand", "Sawai Madhopur", "Sikar",
+      "Sirohi", "Sri Ganganagar", "Tonk", "Udaipur"
+    ],
+    "Uttar Pradesh": [
+      "Agra", "Aligarh", "Ayodhya", "Bareilly", "Ghaziabad", "Gorakhpur", "Jhansi",
+      "Kanpur Nagar", "Lucknow", "Mathura", "Meerut", "Moradabad", "Noida (Gautam Buddha Nagar)",
+      "Prayagraj", "Varanasi"
+    ],
+    "Madhya Pradesh": [
+      "Bhopal", "Gwalior", "Indore", "Jabalpur", "Ujjain", "Sagar", "Rewa", "Satna"
+    ],
+    "West Bengal": [
+      "Kolkata", "Howrah", "North 24 Parganas", "South 24 Parganas", "Darjeeling", "Hooghly", "Murshidabad", "Nadia"
+    ],
+    "Punjab": [
+      "Amritsar", "Bathinda", "Jalandhar", "Ludhiana", "Mohali (SAS Nagar)", "Patiala"
+    ],
+    "Haryana": [
+      "Ambala", "Faridabad", "Gurugram", "Hisar", "Karnal", "Panipat", "Rohtak", "Sonipat"
+    ],
+    "Odisha": [
+      "Angul", "Balasore", "Bhadrak", "Cuttack", "Ganjam", "Khurda (Bhubaneswar)", "Puri", "Sambalpur"
+    ],
+    "Assam": [
+      "Cachar", "Dibrugarh", "Kamrup Metropolitan (Guwahati)", "Nagaon", "Silchar", "Sonitpur"
+    ],
+    "Bihar": [
+      "Bhagalpur", "Gaya", "Muzaffarpur", "Patna", "Purnia", "Vaishali"
+    ]
+  };
+
+  function updateDistrictsForState(selectedState, preselectedDistrict) {
+    const districtSelect = document.getElementById('id_site_district');
+    if (!districtSelect) return;
+
+    const currentVal = (preselectedDistrict !== undefined && preselectedDistrict !== null && preselectedDistrict !== '') 
+      ? preselectedDistrict 
+      : districtSelect.value;
+      
+    const districts = STATE_DISTRICTS[selectedState] || [];
+
+    districtSelect.innerHTML = '<option value="">-- Select District --</option>';
+
+    if (districts.length > 0) {
+      districts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        // Only select if it matches an official district of this state
+        if (currentVal && d.toLowerCase() === currentVal.trim().toLowerCase()) {
+          opt.selected = true;
+        }
+        districtSelect.appendChild(opt);
+      });
+    }
+  }
+
+  // Geolocation for Solar Site
+  function detectBookingLocation() {
+    if (navigator.geolocation) {
+      const locInput = document.getElementById('id_site_location_url');
+      if (locInput) locInput.placeholder = 'Detecting GPS coordinates...';
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude.toFixed(6);
+          const lng = position.coords.longitude.toFixed(6);
+          if (locInput) {
+            locInput.value = `${lat}, ${lng}`;
+          }
+          if (window.SolarToast) {
+            SolarToast.success(`Location detected: ${lat}, ${lng}`, 'GPS Acquired');
+          }
+        },
+        function(error) {
+          if (window.SolarToast) {
+            SolarToast.error('Unable to retrieve location: ' + error.message, 'Geolocation Error');
+          } else {
+            alert('Unable to retrieve location: ' + error.message);
+          }
+          if (locInput) locInput.placeholder = 'e.g. 9.9312, 76.2673 or paste Google Maps sharing link';
+        }
+      );
+    } else {
+      if (window.SolarToast) {
+        SolarToast.warning('Geolocation is not supported by your browser.', 'Unsupported Feature');
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    }
+  }
+
+  // Open/Search in Google Maps
+  function locateOnGoogleMap() {
+    const locInput = document.getElementById('id_site_location_url');
+    const houseInput = document.getElementById('id_site_house_flat');
+    const streetInput = document.getElementById('id_site_street_area');
+    const cityInput = document.getElementById('id_site_city');
+    const distInput = document.getElementById('id_site_district');
+    const stateInput = document.getElementById('id_site_state');
+    const pinInput = document.getElementById('id_site_pincode');
+
+    let query = '';
+    if (locInput && locInput.value.trim()) {
+      const val = locInput.value.trim();
+      if (val.startsWith('http://') || val.startsWith('https://')) {
+        window.open(val, '_blank');
+        return;
+      }
+      query = val;
+    } else {
+      const parts = [];
+      if (houseInput && houseInput.value.trim()) parts.push(houseInput.value.trim());
+      if (streetInput && streetInput.value.trim()) parts.push(streetInput.value.trim());
+      if (cityInput && cityInput.value.trim()) parts.push(cityInput.value.trim());
+      if (distInput && distInput.value.trim()) parts.push(distInput.value.trim());
+      if (stateInput && stateInput.value.trim()) parts.push(stateInput.value.trim());
+      if (pinInput && pinInput.value.trim()) parts.push(pinInput.value.trim());
+      query = parts.join(', ');
+    }
+
+    if (query) {
+      window.open('https://maps.google.com/?q=' + encodeURIComponent(query), '_blank');
+    } else {
+      window.open('https://maps.google.com', '_blank');
+    }
+  }
+
+</script>
+{% endblock %}

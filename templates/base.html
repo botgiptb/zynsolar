@@ -1,0 +1,550 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}zynsolar CRM{% endblock %}</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'img/favicon.ico' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/logo_icon.png' %}">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- Solar CRM Design System -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+  {% block extra_head %}{% endblock %}
+
+  <!-- Prevent sidebar flash on load -->
+  <script>
+    (function(){
+      try {
+        if (window.innerWidth >= 992 && localStorage.getItem('solar_crm_sidebar_collapsed') === '1') {
+          document.documentElement.classList.add('sidebar-collapsed');
+        }
+      } catch(e) {}
+    })();
+  </script>
+</head>
+<body>
+
+  <div class="toast-container position-fixed top-0 end-0 p-3 pt-4" id="solarToastContainer" style="z-index:1095;"></div>
+
+  {% if request.user.is_authenticated %}
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  {% endif %}
+
+  <div class="app-container">
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════════════════════════════ -->
+    {% if request.user.is_authenticated %}
+    <aside class="app-sidebar" id="appSidebar">
+      <script>
+        if (document.documentElement.classList.contains('sidebar-collapsed')) {
+          document.getElementById('appSidebar').classList.add('collapsed');
+        }
+      </script>
+
+      <!-- Brand -->
+      <div class="sidebar-header">
+        <a href="{% url 'core:dashboard' %}" class="brand-wrapper">
+          <div class="brand-icon-box" style="background:#ffffff!important;padding:2px;display:flex;align-items:center;justify-content:center;border-radius:7px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">
+            <img src="{% static 'img/logo_icon.png' %}" alt="zynsolar" style="width:100%;height:100%;object-fit:contain;">
+          </div>
+          <div class="d-flex align-items-center gap-2 brand-title-group">
+            <span class="brand-text">zynsolar</span>
+            <span class="brand-badge" style="background:rgba(0,180,216,0.18);color:#38bdf8;font-size:0.58rem;font-family:monospace;font-weight:700;padding:2px 5px;border-radius:4px;letter-spacing:0.04em;border:1px solid rgba(56,189,248,0.25);">CRM</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Nav -->
+      <div class="sidebar-nav">
+
+        <div class="nav-section-title">Operations</div>
+
+        <a href="{% url 'core:dashboard' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+           title="Dashboard">
+          <i class="bi bi-grid-1x2"></i>
+          <span class="nav-item-text">Dashboard</span>
+        </a>
+
+        <a href="{% url 'bookings:list' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'bookings' and 'task' not in request.resolver_match.url_name and 'checklist' not in request.resolver_match.url_name and 'calendar' not in request.resolver_match.url_name and request.resolver_match.url_name != 'credit_management' %}active{% endif %}"
+           title="Solar Orders">
+          <i class="bi bi-kanban"></i>
+          <span class="nav-item-text">Solar Orders</span>
+
+          <span class="nav-quick-create-btn"
+                onclick="event.preventDefault();event.stopPropagation();window.location.href='{% url 'bookings:create' %}';"
+                title="New Order">
+            <i class="bi bi-plus-lg"></i>
+          </span>
+        </a>
+
+        <a href="{% url 'bookings:task_list' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'bookings' and 'task' in request.resolver_match.url_name or request.resolver_match.app_name == 'bookings' and 'checklist' in request.resolver_match.url_name %}active{% endif %}"
+           title="Tasks">
+          <i class="bi bi-check2-square"></i>
+          <span class="nav-item-text">Tasks</span>
+          {% if pending_tasks_count > 0 %}
+            <span class="badge rounded-pill ms-auto nav-item-badge fw-bold"
+                  style="background:rgba(96,165,250,0.15);color:#93c5fd;font-size:0.65rem;padding:0.15rem 0.5rem;">
+              {{ pending_tasks_count }}
+            </span>
+          {% endif %}
+        </a>
+
+        <a href="{% url 'bookings:calendar' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'bookings' and 'calendar' in request.resolver_match.url_name %}active{% endif %}"
+           title="Calendar">
+          <i class="bi bi-calendar3"></i>
+          <span class="nav-item-text">Calendar</span>
+        </a>
+
+        <a href="{% url 'customers:list' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'customers' %}active{% endif %}"
+           title="Customers">
+          <i class="bi bi-people"></i>
+          <span class="nav-item-text">Customers</span>
+        </a>
+
+
+
+        <div class="nav-section-title mt-2">Reports</div>
+
+        <div class="sidebar-dropdown-item position-relative">
+          <a class="nav-link-custom {% if request.resolver_match.app_name == 'reports' %}active{% endif %}"
+             data-bs-toggle="collapse"
+             href="#collapseReportsMenu"
+             role="button"
+             aria-expanded="{% if request.resolver_match.app_name == 'reports' %}true{% else %}false{% endif %}"
+             aria-controls="collapseReportsMenu"
+             id="navReportsToggle">
+            <i class="bi bi-bar-chart"></i>
+            <span class="nav-item-text flex-grow-1">Reports</span>
+            <i class="bi bi-chevron-down nav-collapse-arrow" style="font-size:0.7rem;"></i>
+          </a>
+          <div class="collapse {% if request.resolver_match.app_name == 'reports' %}show{% endif %} sidebar-dropdown-collapse" id="collapseReportsMenu">
+            <div class="nav-sub-menu ps-2 d-flex flex-column gap-1 pt-1">
+              <div class="sidebar-flyout-header d-none">Reports</div>
+              <a href="{% url 'reports:dashboard' %}"
+                 class="nav-link-custom nav-sub-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                 style="font-size:0.8rem;padding:0.38rem 0.75rem;">
+                <i class="bi bi-building" style="font-size:0.85rem;"></i>
+                <span class="nav-item-text">Company</span>
+              </a>
+              <a href="{% url 'reports:staff_performance' %}"
+                 class="nav-link-custom nav-sub-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'staff_performance' %}active{% endif %}"
+                 style="font-size:0.8rem;padding:0.38rem 0.75rem;">
+                <i class="bi bi-person-lines-fill" style="font-size:0.85rem;"></i>
+                <span class="nav-item-text">Staff</span>
+              </a>
+              <a href="{% url 'reports:team_performance' %}"
+                 class="nav-link-custom nav-sub-link {% if request.resolver_match.app_name == 'reports' and request.resolver_match.url_name == 'team_performance' %}active{% endif %}"
+                 style="font-size:0.8rem;padding:0.38rem 0.75rem;">
+                <i class="bi bi-people" style="font-size:0.85rem;"></i>
+                <span class="nav-item-text">Teams</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-section-title mt-2">Management</div>
+
+        <a href="{% url 'core:user_list' %}"
+           class="nav-link-custom {% if request.resolver_match.app_name == 'core' and 'user' in request.resolver_match.url_name or request.resolver_match.app_name == 'core' and 'team' in request.resolver_match.url_name %}active{% endif %}"
+           id="sidebar-nav-users"
+           title="Users">
+          <i class="bi bi-shield-lock"></i>
+          <span class="nav-item-text">Users</span>
+          {% if pending_approvals_count > 0 %}
+            <span class="badge rounded-pill ms-auto nav-item-badge fw-bold"
+                  style="background:rgba(251,191,36,0.15);color:#fbbf24;font-size:0.65rem;padding:0.15rem 0.5rem;">
+              {{ pending_approvals_count }}
+            </span>
+          {% endif %}
+        </a>
+
+        <div class="sidebar-dropdown-item position-relative">
+          <a class="nav-link-custom {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' %}active{% endif %}"
+             data-bs-toggle="collapse"
+             href="#collapseSettingsMenu"
+             role="button"
+             aria-expanded="{% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' %}true{% else %}false{% endif %}"
+             aria-controls="collapseSettingsMenu"
+             id="navSettingsToggle">
+            <i class="bi bi-gear"></i>
+            <span class="nav-item-text flex-grow-1">Settings</span>
+            <i class="bi bi-chevron-down nav-collapse-arrow" style="font-size:0.7rem;"></i>
+          </a>
+          <div class="collapse {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' %}show{% endif %} sidebar-dropdown-collapse" id="collapseSettingsMenu">
+            <div class="nav-sub-menu ps-2 d-flex flex-column gap-1 pt-1">
+              <div class="sidebar-flyout-header d-none">Settings</div>
+              <a href="{% url 'core:settings' %}?tab=company"
+                 class="nav-link-custom nav-sub-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' and request.GET.tab == 'company' or request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' and not request.GET.tab %}active{% endif %}"
+                 style="font-size:0.8rem;padding:0.38rem 0.75rem;">
+                <i class="bi bi-building" style="font-size:0.85rem;"></i>
+                <span class="nav-item-text">Company Profile</span>
+              </a>
+              <a href="{% url 'core:settings' %}?tab=utilities"
+                 class="nav-link-custom nav-sub-link {% if request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' and request.GET.tab == 'utilities' or request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' and request.GET.tab == 'catalog' or request.resolver_match.app_name == 'core' and request.resolver_match.url_name == 'settings' and request.GET.tab == 'pipeline' %}active{% endif %}"
+                 style="font-size:0.8rem;padding:0.38rem 0.75rem;">
+                <i class="bi bi-tools" style="font-size:0.85rem;"></i>
+                <span class="nav-item-text">Utilities</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /sidebar-nav -->
+
+      <!-- User Footer -->
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center gap-2">
+          <a href="{% url 'core:profile' %}" class="d-flex align-items-center gap-2 text-decoration-none flex-grow-1 overflow-hidden" title="View & Edit Profile">
+            <div class="user-avatar-circle flex-shrink-0" style="{% if request.user.profile.avatar_url %}background-image: url('{{ request.user.profile.avatar_url }}'); background-size: cover; background-position: center; border: 1.5px solid #10b981; color: transparent;{% endif %}">
+              {% if not request.user.profile.avatar_url %}
+                {{ request.user.first_name|default:request.user.username|slice:":2"|upper }}
+              {% endif %}
+            </div>
+            <div class="sidebar-footer-text overflow-hidden flex-grow-1">
+              <div class="text-white fw-semibold text-truncate" style="font-size:0.78rem;line-height:1.2;">
+                {{ request.user.get_full_name|default:request.user.username }}
+              </div>
+              <div style="font-size:0.68rem;color:#5a9e93;">
+                {% if request.user.is_superuser %}Administrator{% elif request.user.is_staff %}Staff Admin{% else %}Staff Agent{% endif %}
+              </div>
+            </div>
+          </a>
+          <button type="button"
+                  class="sidebar-footer-text btn p-0 border-0 flex-shrink-0"
+                  style="background:transparent;color:#5a9e93;font-size:0.85rem;"
+                  title="Sign Out"
+                  data-bs-toggle="modal"
+                  data-bs-target="#logoutModal">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════════════════════════════ -->
+    <div class="app-main" {% if not request.user.is_authenticated %}style="margin-left:0;width:100%;"{% endif %}>
+
+      {% if request.user.is_authenticated %}
+      <!-- Top Navbar -->
+      <nav class="app-navbar">
+        <!-- Left: toggle + breadcrumb -->
+        <div class="d-flex align-items-center gap-2 overflow-hidden flex-shrink-0" style="min-width:0;">
+          <button class="btn-sidebar-toggle" id="sidebarToggleBtn" title="Toggle Sidebar">
+            <i class="bi bi-list" style="font-size:1.1rem;"></i>
+          </button>
+          <div class="navbar-breadcrumb-wrap text-truncate">
+            {% block breadcrumbs %}
+              <span class="fw-semibold text-truncate" style="font-size:0.88rem;color:#2d3748;">Dashboard</span>
+            {% endblock %}
+          </div>
+        </div>
+
+        <!-- Center: Global Search -->
+        <div class="d-none d-lg-block mx-3 flex-grow-1" style="max-width:420px;">
+          <form action="{% url 'customers:list' %}" method="get">
+            <div class="input-group" style="height:34px;">
+              <span class="input-group-text border-end-0 rounded-start-3" style="background:#f8fafc;border-color:#e2e8f0;">
+                <i class="bi bi-search text-muted" style="font-size:0.8rem;"></i>
+              </span>
+              <input type="text" name="q" class="form-control border-start-0 border-end-0"
+                     placeholder="Search customers, bookings, phone..."
+                     style="background:#f8fafc;border-color:#e2e8f0;font-size:0.82rem;height:34px;"
+                     value="{{ current_query|default:'' }}">
+              <span class="input-group-text border-start-0 rounded-end-3" style="background:#f8fafc;border-color:#e2e8f0;">
+                <kbd class="border rounded px-1" style="font-size:0.65rem;background:#fff;color:#a0aec0;font-family:monospace;">Ctrl K</kbd>
+              </span>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+
+          <!-- New button -->
+          <div class="dropdown">
+            <button class="btn btn-sm fw-semibold d-inline-flex align-items-center gap-1"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    style="background:#1a6b5a;border:1px solid #155748;color:#fff;border-radius:6px;padding:0.38rem 0.85rem;font-size:0.82rem;">
+              <i class="bi bi-plus-lg"></i>
+              <span>New</span>
+              <i class="bi bi-chevron-down opacity-75" style="font-size:0.65rem;"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end mt-1" style="min-width:200px;">
+              <li>
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'bookings:create' %}">
+                  <div class="rounded p-1" style="background:#ecfdf5;"><i class="bi bi-sun text-success" style="font-size:0.85rem;"></i></div>
+                  <div>
+                    <div class="fw-semibold" style="font-size:0.82rem;">Solar Order</div>
+                    <div class="text-muted" style="font-size:0.72rem;">New installation project</div>
+                  </div>
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'customers:create' %}">
+                  <div class="rounded p-1" style="background:#eff6ff;"><i class="bi bi-person text-primary" style="font-size:0.85rem;"></i></div>
+                  <div>
+                    <div class="fw-semibold" style="font-size:0.82rem;">Customer</div>
+                    <div class="text-muted" style="font-size:0.72rem;">Register new customer</div>
+                  </div>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li>
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'core:team_create_operational' %}">
+                  <div class="rounded p-1" style="background:#f5f3ff;"><i class="bi bi-people" style="font-size:0.85rem;color:#7c3aed;"></i></div>
+                  <div>
+                    <div class="fw-semibold" style="font-size:0.82rem;">New Team</div>
+                    <div class="text-muted" style="font-size:0.72rem;">Create operations team</div>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Notifications -->
+          <div class="dropdown">
+            <button class="btn btn-sm d-flex align-items-center justify-content-center position-relative"
+                    type="button"
+                    data-bs-toggle="dropdown"
+                    style="width:34px;height:34px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#718096;">
+              <i class="bi bi-bell" style="font-size:0.9rem;"></i>
+              {% if pending_approvals_count > 0 %}
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                      style="font-size:0.6rem;padding:0.2rem 0.35rem;">{{ pending_approvals_count }}</span>
+              {% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-3 mt-1" style="min-width:280px;">
+              <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                <span class="fw-semibold" style="font-size:0.84rem;">Notifications</span>
+                <span class="badge" style="background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;font-size:0.65rem;">Live</span>
+              </div>
+              {% if pending_approvals_count > 0 %}
+                <a href="{% url 'core:user_approvals' %}"
+                   class="d-flex align-items-start gap-2 p-2 rounded text-decoration-none"
+                   style="background:#fffbeb;">
+                  <i class="bi bi-person-exclamation text-warning fs-5"></i>
+                  <div>
+                    <div class="fw-semibold" style="font-size:0.82rem;color:#2d3748;">{{ pending_approvals_count }} User Registration{{ pending_approvals_count|pluralize }}</div>
+                    <div class="text-muted" style="font-size:0.72rem;">Pending review</div>
+                  </div>
+                </a>
+              {% else %}
+                <div class="text-center py-3 text-muted" style="font-size:0.82rem;">
+                  <i class="bi bi-bell-slash d-block fs-4 opacity-40 mb-1"></i>
+                  All caught up!
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Agent Profile Shortcut -->
+          <a href="{% url 'core:profile' %}" class="d-flex align-items-center justify-content-center text-decoration-none rounded-circle shadow-2xs ms-1 hover-scale"
+             style="width:34px;height:34px;background:#f8fafc;border:1.5px solid #cbd5e1;overflow:hidden;"
+             title="My Profile ({{ request.user.get_full_name|default:request.user.username }})">
+            {% if request.user.profile.avatar_url %}
+              <img src="{{ request.user.profile.avatar_url }}" alt="{{ request.user.username }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+              <span class="fw-bold text-dark" style="font-size:0.75rem;">
+                {{ request.user.first_name|default:request.user.username|slice:":2"|upper }}
+              </span>
+            {% endif %}
+          </a>
+
+        </div>
+      </nav>
+
+      {% else %}
+      <!-- Unauthenticated navbar -->
+      <nav class="app-navbar">
+        <a href="{% url 'core:dashboard' %}" class="d-flex align-items-center gap-2 text-decoration-none">
+          <div class="brand-icon-box" style="background:#ffffff!important;padding:2px;display:flex;align-items:center;justify-content:center;border-radius:7px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">
+            <img src="{% static 'img/logo_icon.png' %}" alt="zynsolar" style="width:100%;height:100%;object-fit:contain;">
+          </div>
+          <span style="font-size:1rem;font-weight:700;color:#0f2027;font-family:'Plus Jakarta Sans',sans-serif;">zynsolar CRM</span>
+        </a>
+        <a href="{% url 'core:login' %}" class="btn btn-sm btn-solar-primary">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+        </a>
+      </nav>
+      {% endif %}
+
+      <!-- Django Messages -->
+      {% if messages %}
+      <div class="px-4 pt-3">
+        {% for message in messages %}
+          <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show d-flex align-items-center gap-2"
+               role="alert"
+               style="border-radius:8px;font-size:0.84rem;">
+            {% if message.tags == 'success' %}<i class="bi bi-check-circle-fill text-success fs-5 flex-shrink-0"></i>
+            {% elif message.tags == 'warning' %}<i class="bi bi-exclamation-triangle-fill text-warning fs-5 flex-shrink-0"></i>
+            {% elif message.tags == 'error' or message.tags == 'danger' %}<i class="bi bi-x-circle-fill text-danger fs-5 flex-shrink-0"></i>
+            {% else %}<i class="bi bi-info-circle-fill text-primary fs-5 flex-shrink-0"></i>{% endif %}
+            <div>{{ message }}</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Page Content -->
+      <main class="page-content-wrapper">
+        {% block content %}{% endblock %}
+      </main>
+
+    </div><!-- /app-main -->
+  </div><!-- /app-container -->
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Main JS -->
+  <script src="{% static 'js/main.js' %}"></script>
+  <!-- Country Code & Strict Phone Input JS -->
+  <script src="{% static 'js/country_phone.js' %}"></script>
+
+  <script>
+    // Ctrl+K / Cmd+K global search focus
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        const el = document.querySelector('input[name="q"]');
+        if (el) { e.preventDefault(); el.focus(); el.select(); }
+      }
+    });
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+
+  <!-- Collapsed sidebar flyout hover & click handler with grace delay -->
+  <script>
+    (function() {
+      let flyoutCloseTimer = null;
+      const dropdownItems = document.querySelectorAll('.sidebar-dropdown-item');
+
+      function isCollapsed() {
+        return document.documentElement.classList.contains('sidebar-collapsed') ||
+               document.getElementById('appSidebar')?.classList.contains('collapsed');
+      }
+
+      dropdownItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+          if (!isCollapsed()) return;
+          clearTimeout(flyoutCloseTimer);
+          dropdownItems.forEach(el => {
+            if (el !== item) el.classList.remove('flyout-open');
+          });
+          item.classList.add('flyout-open');
+        });
+
+        item.addEventListener('mouseleave', function() {
+          if (!isCollapsed()) return;
+          clearTimeout(flyoutCloseTimer);
+          flyoutCloseTimer = setTimeout(() => {
+            item.classList.remove('flyout-open');
+          }, 250);
+        });
+      });
+
+      document.addEventListener('click', function(e) {
+        if (!isCollapsed()) return;
+
+        const dropdownToggle = e.target.closest('.sidebar-dropdown-item > .nav-link-custom');
+        if (dropdownToggle) {
+          e.preventDefault();
+          e.stopPropagation();
+          const parentItem = dropdownToggle.closest('.sidebar-dropdown-item');
+          const wasOpen = parentItem.classList.contains('flyout-open');
+          clearTimeout(flyoutCloseTimer);
+          dropdownItems.forEach(el => el.classList.remove('flyout-open'));
+          if (!wasOpen) {
+            parentItem.classList.add('flyout-open');
+          }
+          return;
+        }
+
+        if (!e.target.closest('.sidebar-dropdown-collapse')) {
+          clearTimeout(flyoutCloseTimer);
+          dropdownItems.forEach(el => el.classList.remove('flyout-open'));
+        }
+      });
+    })();
+  </script>
+
+  <!-- Proper Logout Confirmation Modal -->
+  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-body p-4 text-center">
+          <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 58px; height: 58px; background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+            <i class="bi bi-box-arrow-right fs-2"></i>
+          </div>
+          <h5 class="fw-bold text-dark mb-1" id="logoutModalLabel" style="font-size: 1.15rem;">Sign Out of zynsolar?</h5>
+          <p class="text-muted small mb-4" style="font-size: 0.84rem; line-height: 1.45;">
+            Are you sure you want to end your current session? You will be redirected to the sign-in screen.
+          </p>
+          <div class="d-flex align-items-center justify-content-center gap-2">
+            <button type="button" class="btn btn-light border px-3 py-2 fw-semibold rounded-3 flex-fill text-muted" data-bs-dismiss="modal" style="font-size: 0.85rem;">
+              Cancel
+            </button>
+            <form action="{% url 'core:logout' %}" method="post" class="m-0 flex-fill">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger px-3 py-2 fw-semibold rounded-3 w-100 d-flex align-items-center justify-content-center gap-1.5" style="font-size: 0.85rem; background: #dc2626; border-color: #dc2626;">
+                <i class="bi bi-box-arrow-right"></i> Sign Out
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task View Mode Link Sync -->
+  <script>
+    (function() {
+      try {
+        const savedView = localStorage.getItem('solar_tasks_view_mode');
+        if (savedView) {
+          const taskLinks = document.querySelectorAll('a[href*="/bookings/tasks/"]');
+          taskLinks.forEach(link => {
+            try {
+              const u = new URL(link.href, window.location.origin);
+              if (!u.searchParams.has('view')) {
+                u.searchParams.set('view', savedView);
+                link.href = u.pathname + u.search;
+              }
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
+    })();
+  </script>
+
+</body>
+</html>

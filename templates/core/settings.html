@@ -1,0 +1,1147 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<style>
+  /* Zynsolar Theme for Utilities Page */
+  #utilityNavTabs .nav-link {
+    color: #475569 !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.15s ease !important;
+  }
+  #utilityNavTabs .nav-link:hover {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    border-color: #a7f3d0 !important;
+  }
+  #utilityNavTabs .nav-link.active {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
+  }
+  #utilityNavTabs .nav-link.active i {
+    color: #ffffff !important;
+  }
+
+  #catalogCategoryTab .nav-link {
+    color: #334155 !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-left: 3.5px solid transparent !important;
+    transition: all 0.14s ease !important;
+  }
+  #catalogCategoryTab .nav-link:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+  }
+  #catalogCategoryTab .nav-link.active {
+    background: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+    border-left: 3.5px solid #059669 !important;
+    font-weight: 700 !important;
+  }
+  #catalogCategoryTab .nav-link.active .badge {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+  }
+  #catalogCategoryTab .nav-link.active i {
+    color: #059669 !important;
+  }
+
+  /* Color swatch buttons */
+  .btn-color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn-color-swatch:hover {
+    transform: scale(1.18);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  .btn-color-swatch:focus {
+    outline: 2px solid #059669;
+    outline-offset: 1px;
+  }
+
+  /* Icon picker buttons */
+  .icon-picker-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    padding: 0;
+  }
+  .icon-picker-btn:hover {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+    transform: translateY(-1px);
+  }
+  .icon-picker-btn.active {
+    background: #059669 !important;
+    color: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35) !important;
+  }
+</style>
+{% endblock %}
+
+{% block title %}{% if active_tab == 'company' or not active_tab %}Company Profile{% else %}Utilities &amp; Workflow Masters{% endif %} | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <span class="text-dark fw-bold text-truncate">Settings</span>
+  <span class="text-muted opacity-50 d-none d-sm-inline">&bull;</span>
+  <span class="text-muted small d-none d-sm-inline" style="font-size: 0.78rem;">
+    {% if active_tab == 'company' or not active_tab %}Company Profile{% else %}Utilities{% endif %}
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-xl-4 py-3">
+
+  {% if active_tab == 'company' or not active_tab %}
+    <!-- ================================================================= -->
+    <!-- COMPANY PROFILE -->
+    <!-- ================================================================= -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-9 col-lg-10">
+          <div class="card-saas mb-4">
+            <div class="card-header-clean justify-content-between">
+              <div>
+                <h5 class="fw-bold mb-0">Company Details</h5>
+                <small class="text-muted">Entity information appearing on official reports, proposals &amp; print layouts</small>
+              </div>
+              <div class="p-2 rounded-circle text-muted" style="background: var(--bg-muted);">
+                <i class="bi bi-building fs-5 text-primary"></i>
+              </div>
+            </div>
+            <form method="post" class="card-body-clean">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save_company">
+
+              <div class="row g-3">
+                <div class="col-md-7">
+                  <label class="form-label fw-semibold small text-secondary">Company Official Name <span class="text-danger">*</span></label>
+                  <input type="text" name="company_name" class="form-control" value="{{ company.company_name }}" required>
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label fw-semibold small text-secondary">Tax / GST Number</label>
+                  <input type="text" name="tax_id" class="form-control" value="{{ company.tax_id }}" placeholder="e.g. 32AABCU9603R1ZM">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold small text-secondary">Company Tagline / Subtitle</label>
+                  <input type="text" name="tagline" class="form-control" value="{{ company.tagline }}" placeholder="e.g. Solar Distribution &amp; Installation Management">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-secondary">Support Phone Number</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-telephone"></i></span>
+                    <input type="text" name="phone" class="form-control" value="{{ company.phone }}" placeholder="+91 98765 43210">
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-secondary">Official Operations Email</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                    <input type="email" name="email" class="form-control" value="{{ company.email }}" placeholder="operations@zynsolar.com">
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold small text-secondary">Headquarters / Warehouse Address</label>
+                  <textarea name="address" class="form-control" rows="3" placeholder="Enter complete office/warehouse location address">{{ company.address }}</textarea>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-top text-end">
+                <button type="submit" class="btn btn-solar-primary px-4 fw-semibold">
+                  <i class="bi bi-check-circle-fill me-1"></i> Save Company Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+  {% else %}
+    <!-- ================================================================= -->
+    <!-- UTILITIES (CATALOG MASTERS & PIPELINE WORKFLOW) -->
+    <!-- ================================================================= -->
+    <!-- Utilities Sub-Navigation Bar -->
+      <div class="card-saas p-2.5 mb-4 border shadow-2xs" style="border-radius: 12px; border-color: #e2e8f0 !important; background: #ffffff;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <ul class="nav nav-pills gap-2" id="utilityNavTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {% if active_tab != 'pipeline' %}active{% endif %} px-3.5 py-2 fw-semibold small rounded-2 d-inline-flex align-items-center"
+                      id="subtab-catalog-btn" data-bs-toggle="pill" data-bs-target="#subpane-catalog" type="button" role="tab" style="font-size: 0.84rem;">
+                <i class="bi bi-grid-fill" style="margin-right: 8px;"></i> Catalog &amp; Equipment Masters
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {% if active_tab == 'pipeline' %}active{% endif %} px-3.5 py-2 fw-semibold small rounded-2 d-inline-flex align-items-center"
+                      id="subtab-pipeline-btn" data-bs-toggle="pill" data-bs-target="#subpane-pipeline" type="button" role="tab" style="font-size: 0.84rem;">
+                <i class="bi bi-kanban-fill" style="margin-right: 8px;"></i> Pipeline Stages &amp; Workflow
+              </button>
+            </li>
+          </ul>
+          <div class="d-none d-md-flex align-items-center pe-2 text-muted" style="font-size: 0.78rem;">
+            <i class="bi bi-sliders text-success" style="margin-right: 7px;"></i>
+            <span>System Dropdown Masters, Hardware Models &amp; Project Stage Order</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Utilities Sub-Pane Content -->
+      <div class="tab-content" id="utilitySubTabContent">
+        <!-- Sub-Pane 1: Catalog Masters -->
+        <div class="tab-pane fade {% if active_tab != 'pipeline' %}show active{% endif %}" id="subpane-catalog" role="tabpanel">
+
+      <div class="row g-4">
+        <!-- Sub-navigation Column (Category Selector) -->
+        <div class="col-lg-3 col-xl-3">
+          <div class="card-saas p-2">
+            <div class="px-3 py-2 text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.05em; color: var(--text-muted);">
+              Equipment &amp; Dropdown Masters
+            </div>
+            <div class="nav flex-column nav-pills gap-1" id="catalogCategoryTab" role="tablist">
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'PANEL_BRAND' or not active_cat %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-panel-brand" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-patch-check-fill text-success"></i> Solar Panel Brands
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_panel_brands|length }}</span>
+              </a>
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'PANEL_TECH' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-panel-tech" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-cpu-fill text-success"></i> Panel Technologies
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_panel_techs|length }}</span>
+              </a>
+
+
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'INVERTER' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-inverter" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-lightning-charge-fill text-primary"></i> Inverter Models / Ratings
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_inverters|length }}</span>
+              </a>
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'MOUNTING' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-mounting" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-buildings-fill text-info"></i> Mounting Structure Types
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_mountings|length }}</span>
+              </a>
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'ACCESSORY' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-accessory" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-tools text-danger"></i> Required Accessories Shelf
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_accessories|length }}</span>
+              </a>
+
+              <div class="px-3 pt-3 pb-1 text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.05em; color: var(--text-muted);">
+                Customer &amp; Lead Masters
+              </div>
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'LEAD_SOURCE' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-lead" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-megaphone-fill text-success"></i> Customer Lead Sources
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_lead_sources|length }}</span>
+              </a>
+
+              <div class="px-3 pt-3 pb-1 text-uppercase fw-bold" style="font-size: 0.68rem; letter-spacing: 0.05em; color: var(--text-muted);">
+                User &amp; Access Masters
+              </div>
+
+              <a class="nav-link text-start px-3 py-2.5 rounded-2 d-flex align-items-center justify-content-between {% if active_cat == 'ROLE' %}active{% endif %}" 
+                 data-bs-toggle="pill" href="#cat-role" role="tab" style="font-size: 0.84rem;">
+                <span class="d-flex align-items-center gap-2">
+                  <i class="bi bi-person-badge-fill text-primary"></i> Assigned Roles
+                </span>
+                <span class="badge bg-light text-secondary border rounded-pill" style="font-size: 0.7rem;">{{ catalog_roles|length }}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Master Items List & Add Form Container -->
+        <div class="col-lg-9 col-xl-9">
+          <div class="tab-content" id="catalogCategoryTabContent">
+
+            <!-- 0A. SOLAR PANEL BRANDS -->
+            <div class="tab-pane fade {% if active_cat == 'PANEL_BRAND' or not active_cat %}show active{% endif %}" id="cat-panel-brand" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="PANEL_BRAND" category_title="Solar Panel Brands & Manufacturers" category_desc="Manage solar panel manufacturers and brands selectable on booking forms (e.g. Tata Power, Waaree, Adani, Vikram)." items=catalog_panel_brands icon="bi-patch-check-fill" placeholder="e.g. RenewSys Solar" %}
+            </div>
+
+            <!-- 0B. SOLAR PANEL TECHNOLOGIES -->
+            <div class="tab-pane fade {% if active_cat == 'PANEL_TECH' %}show active{% endif %}" id="cat-panel-tech" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="PANEL_TECH" category_title="Panel Technologies & Cell Types" category_desc="Manage solar cell technologies and types (Mono PERC, TopCon N-Type, Bifacial, etc.)." items=catalog_panel_techs icon="bi-cpu-fill" placeholder="e.g. HJT Heterojunction Dual-Glass" %}
+            </div>
+
+
+
+            <!-- 2. INVERTERS -->
+            <div class="tab-pane fade {% if active_cat == 'INVERTER' %}show active{% endif %}" id="cat-inverter" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="INVERTER" category_title="Inverter Models & Capacity Ratings" category_desc="Manage on-grid, off-grid, and hybrid inverters with capacity ratings selectable on bookings." items=catalog_inverters icon="bi-lightning-charge-fill" placeholder="e.g. Sungrow 10kW On-Grid 3-Phase Inverter" %}
+            </div>
+
+            <!-- 3. MOUNTING STRUCTURES -->
+            <div class="tab-pane fade {% if active_cat == 'MOUNTING' %}show active{% endif %}" id="cat-mounting" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="MOUNTING" category_title="Mounting Structure Types" category_desc="Manage installation mounting structure types (Tin shed, RCC roof, ground elevated, etc.)." items=catalog_mountings icon="bi-buildings-fill" placeholder="e.g. Elevated Galvanized Iron Super-Structure" %}
+            </div>
+
+            <!-- 4. ACCESSORIES QUICK SHELF -->
+            <div class="tab-pane fade {% if active_cat == 'ACCESSORY' %}show active{% endif %}" id="cat-accessory" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="ACCESSORY" category_title="Required Accessories & Safety Gear" category_desc="Manage items that appear on the 1-click Quick Shelf for job accessories and safety equipment." items=catalog_accessories icon="bi-tools" placeholder="e.g. Bidirectional Net Metering Device" %}
+            </div>
+
+            <!-- 5. LEAD SOURCES -->
+            <div class="tab-pane fade {% if active_cat == 'LEAD_SOURCE' %}show active{% endif %}" id="cat-lead" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="LEAD_SOURCE" category_title="Customer Lead Sources" category_desc="Manage channels and acquisition sources for customer tracking." items=catalog_lead_sources icon="bi-megaphone-fill" placeholder="e.g. Architect / Builder Referral" %}
+            </div>
+
+            <!-- 6. ASSIGNED ROLES -->
+            <div class="tab-pane fade {% if active_cat == 'ROLE' %}show active{% endif %}" id="cat-role" role="tabpanel">
+              {% include "core/includes/catalog_category_card.html" with category_code="ROLE" category_title="User Assigned Roles" category_desc="Manage operational, technical, and administration roles assignable to team members." items=catalog_roles icon="bi-person-badge-fill" placeholder="e.g. Quality Assurance Specialist / Safety Officer" %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: PIPELINE WORKFLOW & STAGES -->
+        </div>
+
+        <!-- Sub-Pane 2: Pipeline Stages -->
+        <div class="tab-pane fade {% if active_tab == 'pipeline' %}show active{% endif %}" id="subpane-pipeline" role="tabpanel">
+          <!-- Main Card matching Catalog & Equipment Masters Theme -->
+          <div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+            <!-- Card Header matching Catalog exactly -->
+            <div class="card-header border-bottom p-3 p-md-4 bg-white d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="rounded-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; font-size: 0.95rem;">
+                    <i class="bi bi-kanban-fill"></i>
+                  </span>
+                  <h5 class="mb-0 fw-bold text-dark font-heading">Kanban Pipeline Workflow &amp; Stages</h5>
+                </div>
+                <p class="text-muted small mb-0 mt-1">Standard workflow sequence for solar projects. Manage stage order, milestones, visual branding, and color themes.</p>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border px-2.5 py-1.5" style="font-size: 0.75rem;">
+                  {{ pipeline_stages|length }} Configured Stages
+                </span>
+                <button type="button" class="btn btn-solar-primary btn-sm fw-semibold d-inline-flex align-items-center shadow-xs" data-bs-toggle="modal" data-bs-target="#addStageModal" style="height: 32px; padding: 0 14px; border-radius: 8px; font-size: 0.8rem;">
+                  <i class="bi bi-plus-lg" style="margin-right: 6px;"></i> Add New Stage
+                </button>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body p-3 p-md-4">
+              <!-- Live Sequence Stepper Preview (styled matching catalog green banner) -->
+              <div class="p-3 rounded-3 mb-4 border" style="background: #f0fdf4; border-color: #bbf7d0 !important;">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2.5">
+                  <h6 class="fw-bold text-dark small text-uppercase mb-0 d-flex align-items-center" style="font-size: 0.74rem; letter-spacing: 0.03em;">
+                    <i class="bi bi-diagram-3-fill text-success" style="margin-right: 7px;"></i> Live Pipeline Sequence Preview (Left to Right)
+                  </h6>
+                  <span class="badge bg-white text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-semibold" style="font-size: 0.72rem;">
+                    <i class="bi bi-layers-fill text-success" style="margin-right: 5px;"></i>{{ pipeline_stages|length }} Total Stages
+                  </span>
+                </div>
+                
+                <div class="d-flex align-items-center gap-2 overflow-auto py-1">
+                  {% for s in pipeline_stages %}
+                    {% if s.is_active %}
+                      <div class="d-flex align-items-center flex-shrink-0 px-2.5 py-1.5 rounded-2 border bg-white shadow-2xs position-relative" style="border-left: 3px solid {{ s.color }} !important; border-color: #e2e8f0; min-width: 145px;">
+                        <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 24px; height: 24px; background-color: {{ s.bg_header }}; border: 1px solid {{ s.border_color }};">
+                          <i class="bi {{ s.icon }}" style="color: {{ s.color }}; font-size: 0.78rem;"></i>
+                        </div>
+                        <div class="ms-2 me-auto text-truncate" style="max-width: 130px;">
+                          <div class="fw-semibold text-dark text-truncate" style="font-size: 0.8rem;">{{ s.name }}</div>
+                        </div>
+                        <span class="badge rounded-pill ms-1.5" style="background-color: {{ s.bg_header }}; color: {{ s.header_text }}; border: 1px solid {{ s.border_color }}; font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem;">
+                          {{ s.bookings_count }}
+                        </span>
+                      </div>
+                      {% if not forloop.last %}
+                        <i class="bi bi-chevron-right text-muted opacity-40 flex-shrink-0 mx-0.5" style="font-size: 0.75rem;"></i>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Stages Management Table (Matching Catalog Table exactly) -->
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light text-secondary small text-uppercase" style="font-size: 0.7rem;">
+                    <tr>
+                      <th style="width: 70px;">#</th>
+                      <th>Stage Name &amp; Visual Brand</th>
+                      <th style="width: 130px;">Stage Code</th>
+                      <th style="width: 140px;">Active Projects</th>
+                      <th style="width: 170px;">Milestone Type</th>
+                      <th style="width: 110px;">Status</th>
+                      <th style="width: 130px;" class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for s in pipeline_stages %}
+                      <tr class="{% if not s.is_active %}opacity-75 bg-light{% endif %}">
+                        <!-- Sequence & Reorder Controls -->
+                        <td>
+                          <div class="d-flex align-items-center gap-1.5">
+                            <span class="fw-bold text-dark font-monospace" style="font-size: 0.82rem; min-width: 16px;">{{ s.order }}</span>
+                            <div class="d-inline-flex flex-column" style="gap: 1px;">
+                              <form method="post" class="d-inline m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reorder_pipeline_stage">
+                                <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                                <input type="hidden" name="direction" value="up">
+                                <button type="submit" class="btn btn-xs btn-light border p-0 d-flex align-items-center justify-content-center" title="Move earlier" {% if forloop.first %}disabled{% endif %} style="width: 17px; height: 13px; font-size: 0.55rem; border-radius: 3px;">
+                                  <i class="bi bi-chevron-up"></i>
+                                </button>
+                              </form>
+                              <form method="post" class="d-inline m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reorder_pipeline_stage">
+                                <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                                <input type="hidden" name="direction" value="down">
+                                <button type="submit" class="btn btn-xs btn-light border p-0 d-flex align-items-center justify-content-center" title="Move later" {% if forloop.last %}disabled{% endif %} style="width: 17px; height: 13px; font-size: 0.55rem; border-radius: 3px;">
+                                  <i class="bi bi-chevron-down"></i>
+                                </button>
+                              </form>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Stage Name & Visual Brand -->
+                        <td>
+                          <div class="d-flex align-items-center">
+                            <div class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="background-color: {{ s.bg_header }}; border: 1px solid {{ s.border_color }}; width: 32px; height: 32px;">
+                              <i class="bi {{ s.icon }}" style="color: {{ s.color }}; font-size: 0.95rem;"></i>
+                            </div>
+                            <div class="ms-2.5">
+                              <div class="fw-semibold text-dark {% if not s.is_active %}text-muted{% endif %}" style="font-size: 0.88rem;">{{ s.name }}</div>
+                              <div class="d-flex align-items-center mt-0.5">
+                                <span class="badge rounded-pill font-monospace" style="background-color: {{ s.color }}18; color: {{ s.color }}; border: 1px solid {{ s.color }}35; font-size: 0.65rem; padding: 0.12rem 0.48rem; font-weight: 600;">
+                                  <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: {{ s.color }}; margin-right: 5px;"></span>{{ s.color }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Code Identifier -->
+                        <td>
+                          <code class="px-2 py-0.5 rounded font-monospace" style="background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; font-size: 0.75rem; font-weight: 600;">{{ s.code }}</code>
+                        </td>
+
+                        <!-- Active Projects -->
+                        <td>
+                          {% if s.bookings_count > 0 %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 600;">
+                              <i class="bi bi-folder2-open" style="margin-right: 5px;"></i>{{ s.bookings_count }} active project{{ s.bookings_count|pluralize }}
+                            </span>
+                          {% else %}
+                            <span class="text-muted small" style="font-size: 0.76rem;">0 projects</span>
+                          {% endif %}
+                        </td>
+
+                        <!-- Milestone Type -->
+                        <td>
+                          {% if s.is_initial %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 600;">
+                              <i class="bi bi-star-fill text-primary" style="margin-right: 5px;"></i>Initial Stage
+                            </span>
+                          {% elif s.is_terminal %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 600;">
+                              <i class="bi bi-check-circle-fill" style="margin-right: 5px;"></i>Terminal / Completed
+                            </span>
+                          {% elif s.is_system %}
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 500;">
+                              <i class="bi bi-shield-check" style="margin-right: 5px;"></i>System Core
+                            </span>
+                          {% else %}
+                            <span class="badge bg-light text-secondary border px-2.5 py-1 rounded-pill" style="font-size: 0.72rem; font-weight: 500;">
+                              <i class="bi bi-gear" style="margin-right: 5px;"></i>Custom Milestone
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <!-- Status (Matched to Catalog) -->
+                        <td>
+                          {% if s.is_active %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size: 0.68rem; font-weight: 600;">
+                              <i class="bi bi-check-circle-fill" style="margin-right: 5px;"></i> Active
+                            </span>
+                          {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 rounded-pill" style="font-size: 0.68rem; font-weight: 500;">
+                              Inactive
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <!-- Actions (Matching Catalog 30px light buttons) -->
+                        <td class="text-end">
+                          <div class="d-inline-flex align-items-center gap-1">
+                            <!-- Edit Button -->
+                            <button type="button" class="btn btn-sm btn-light border py-1 px-2.5 d-inline-flex align-items-center shadow-2xs" data-bs-toggle="modal" data-bs-target="#editStageModal-{{ s.pk }}" title="Edit Stage Appearance & Settings" style="font-size: 0.75rem; font-weight: 600; border-radius: 6px; height: 30px;">
+                              <i class="bi bi-pencil" style="margin-right: 5px; color: #059669;"></i>
+                              <span>Edit</span>
+                            </button>
+
+                            <!-- Secondary Actions Dropdown -->
+                            {% if not s.is_initial and s.is_active or not s.is_system or not s.is_active %}
+                              <div class="dropdown d-inline-block">
+                                <button class="btn btn-sm btn-light border text-muted py-1 px-2 shadow-2xs" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 6px; height: 30px; width: 30px; display: inline-flex; align-items: center; justify-content: center;" title="More Actions">
+                                  <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border py-1" style="font-size: 0.8rem; border-radius: 8px; border-color: #e2e8f0; min-width: 195px;">
+                                  {% if not s.is_initial and s.is_active %}
+                                    <li>
+                                      <form method="post" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="set_initial_pipeline_stage">
+                                        <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                                        <button type="submit" class="dropdown-item d-flex align-items-center py-1.5 text-dark">
+                                          <i class="bi bi-star-fill text-warning" style="margin-right: 8px;"></i> Set as Initial Stage
+                                        </button>
+                                      </form>
+                                    </li>
+                                  {% endif %}
+                                  {% if not s.is_system or not s.is_active %}
+                                    <li>
+                                      <form method="post" class="m-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="toggle_pipeline_stage">
+                                        <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                                        <button type="submit" class="dropdown-item d-flex align-items-center py-1.5 text-secondary">
+                                          <i class="bi {% if s.is_active %}bi-eye-slash text-danger{% else %}bi-eye text-success{% endif %}" style="margin-right: 8px;"></i>
+                                          <span>{% if s.is_active %}Deactivate Stage{% else %}Activate Stage{% endif %}</span>
+                                        </button>
+                                      </form>
+                                    </li>
+                                  {% endif %}
+                                </ul>
+                              </div>
+                            {% endif %}
+                          </div>
+                        </td>
+                      </tr>
+
+                    <!-- Edit Modal for Stage (Delete Button is moved inside here!) -->
+                    <div class="modal fade" id="editStageModal-{{ s.pk }}" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                          <div class="modal-header border-bottom p-3.5" style="border-color: #f1f5f9 !important;">
+                            <div class="d-flex align-items-center gap-2">
+                              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+                                <i class="bi bi-pencil-square fs-6"></i>
+                              </div>
+                              <div>
+                                <h6 class="modal-title fw-bold text-dark font-heading mb-0">Edit Stage: {{ s.name }}</h6>
+                                <small class="text-muted" style="font-size: 0.74rem;">Configure appearance, colors, and workflow properties</small>
+                              </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="edit_pipeline_stage">
+                            <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                            <div class="modal-body p-4">
+                              <!-- Live Appearance Preview -->
+                              <div class="p-3 rounded-3 border mb-3.5 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-color: #e2e8f0;">
+                                <span class="small text-muted fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">Live Appearance:</span>
+                                <div class="d-flex align-items-center gap-2">
+                                  <div class="rounded-2 p-1.5 d-flex align-items-center justify-content-center" id="previewBox-{{ s.pk }}" style="background-color: {{ s.color }}15; border: 1px solid {{ s.color }}40; width: 34px; height: 34px;">
+                                    <i class="bi {{ s.icon }}" id="previewIcon-{{ s.pk }}" style="color: {{ s.color }}; font-size: 1rem;"></i>
+                                  </div>
+                                  <span class="fw-bold text-dark" id="previewTitle-{{ s.pk }}" style="font-size: 0.88rem;">{{ s.name }}</span>
+                                  <span class="badge" id="previewBadge-{{ s.pk }}" style="background-color: {{ s.color }}; color: #ffffff; font-size: 0.65rem; padding: 0.2rem 0.45rem;">{{ s.color }}</span>
+                                </div>
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Stage Display Name <span class="text-danger">*</span></label>
+                                <input type="text" name="name" class="form-control stage-name-input" value="{{ s.name }}" data-preview-prefix="preview-{{ s.pk }}" required style="border-radius: 8px; font-size: 0.88rem;">
+                              </div>
+
+                              <!-- Theme Color Chooser -->
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between mb-1.5">
+                                  <span>Theme Color Accent</span>
+                                  <span class="small font-monospace fw-bold" id="editColorCode-{{ s.pk }}" style="color: {{ s.color }};">{{ s.color }}</span>
+                                </label>
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                  <input type="color" class="form-control form-control-color border cursor-pointer flex-shrink-0 stage-color-picker" id="editColorPicker-{{ s.pk }}" value="{{ s.color }}" data-target-input="editColorInput-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" style="width:42px;height:38px;padding:3px;border-radius:8px;" title="Pick Any RGB Color">
+                                  <input type="text" name="color" class="form-control font-monospace text-uppercase stage-color-input" id="editColorInput-{{ s.pk }}" value="{{ s.color }}" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" placeholder="#059669" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" required style="font-size:0.86rem;font-weight:600;border-radius:8px;">
+                                </div>
+                                <div class="small text-muted mb-1.5" style="font-size:0.72rem;">Quick Curated Palette:</div>
+                                <div class="d-flex flex-wrap gap-1.5 p-2 rounded-2 border bg-white mb-2">
+<button type="button" class="btn-color-swatch" style="background:#059669;" data-color="#059669" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Emerald Green (#059669)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0d9488;" data-color="#0d9488" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Dark Teal (#0d9488)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0891b2;" data-color="#0891b2" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Ocean Cyan (#0891b2)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0284c7;" data-color="#0284c7" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Sky Blue (#0284c7)"></button>
+<button type="button" class="btn-color-swatch" style="background:#2563eb;" data-color="#2563eb" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Royal Blue (#2563eb)"></button>
+<button type="button" class="btn-color-swatch" style="background:#4f46e5;" data-color="#4f46e5" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Indigo (#4f46e5)"></button>
+<button type="button" class="btn-color-swatch" style="background:#7c3aed;" data-color="#7c3aed" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Violet Purple (#7c3aed)"></button>
+<button type="button" class="btn-color-swatch" style="background:#c026d3;" data-color="#c026d3" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Magenta (#c026d3)"></button>
+<button type="button" class="btn-color-swatch" style="background:#db2777;" data-color="#db2777" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Ruby Pink (#db2777)"></button>
+<button type="button" class="btn-color-swatch" style="background:#e11d48;" data-color="#e11d48" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Crimson Rose (#e11d48)"></button>
+<button type="button" class="btn-color-swatch" style="background:#ef4444;" data-color="#ef4444" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Coral Red (#ef4444)"></button>
+<button type="button" class="btn-color-swatch" style="background:#ea580c;" data-color="#ea580c" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Solar Orange (#ea580c)"></button>
+<button type="button" class="btn-color-swatch" style="background:#f97316;" data-color="#f97316" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Tangerine (#f97316)"></button>
+<button type="button" class="btn-color-swatch" style="background:#f59e0b;" data-color="#f59e0b" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Solar Sun (#f59e0b)"></button>
+<button type="button" class="btn-color-swatch" style="background:#d97706;" data-color="#d97706" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Amber Gold (#d97706)"></button>
+<button type="button" class="btn-color-swatch" style="background:#65a30d;" data-color="#65a30d" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Lime Green (#65a30d)"></button>
+<button type="button" class="btn-color-swatch" style="background:#15803d;" data-color="#15803d" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Forest Green (#15803d)"></button>
+<button type="button" class="btn-color-swatch" style="background:#475569;" data-color="#475569" data-target-input="editColorInput-{{ s.pk }}" data-target-picker="editColorPicker-{{ s.pk }}" data-target-code="editColorCode-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Slate Steel (#475569)"></button>
+                                </div>
+                              </div>
+
+                              <!-- Rich Icon Picker -->
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between mb-1.5">
+                                  <span>Stage Icon (Select from 48+ Solar Workflow Icons)</span>
+                                  <span class="small fw-semibold text-dark" id="editIconLabel-{{ s.pk }}"><i class="bi {{ s.icon }} me-1 text-success"></i>{{ s.icon }}</span>
+                                </label>
+                                <input type="hidden" name="icon" id="editIconInput-{{ s.pk }}" value="{{ s.icon }}">
+<div class="border rounded-2 p-2 bg-white icon-picker-grid mb-2" style="max-height: 165px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;">
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-sun-fill' %}active{% endif %}" data-icon="bi-sun-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Solar Sun (bi-sun-fill)"><i class="bi bi-sun-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-brightness-high-fill' %}active{% endif %}" data-icon="bi-brightness-high-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Daylight (bi-brightness-high-fill)"><i class="bi bi-brightness-high-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-lightning-charge-fill' %}active{% endif %}" data-icon="bi-lightning-charge-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Grid Power (bi-lightning-charge-fill)"><i class="bi bi-lightning-charge-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-battery-charging' %}active{% endif %}" data-icon="bi-battery-charging" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Battery (bi-battery-charging)"><i class="bi bi-battery-charging"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-plug-fill' %}active{% endif %}" data-icon="bi-plug-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Plug / Inverter (bi-plug-fill)"><i class="bi bi-plug-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-power' %}active{% endif %}" data-icon="bi-power" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Energization (bi-power)"><i class="bi bi-power"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-activity' %}active{% endif %}" data-icon="bi-activity" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Telemetry (bi-activity)"><i class="bi bi-activity"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-reception-4' %}active{% endif %}" data-icon="bi-reception-4" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Signal (bi-reception-4)"><i class="bi bi-reception-4"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-tools' %}active{% endif %}" data-icon="bi-tools" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Tools / Install (bi-tools)"><i class="bi bi-tools"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-wrench-adjustable-circle' %}active{% endif %}" data-icon="bi-wrench-adjustable-circle" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Wrench (bi-wrench-adjustable-circle)"><i class="bi bi-wrench-adjustable-circle"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-hammer' %}active{% endif %}" data-icon="bi-hammer" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Civil Roof (bi-hammer)"><i class="bi bi-hammer"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-gear-wide-connected' %}active{% endif %}" data-icon="bi-gear-wide-connected" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Engineering (bi-gear-wide-connected)"><i class="bi bi-gear-wide-connected"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cpu-fill' %}active{% endif %}" data-icon="bi-cpu-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Microcontroller (bi-cpu-fill)"><i class="bi bi-cpu-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-rulers' %}active{% endif %}" data-icon="bi-rulers" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Measurement (bi-rulers)"><i class="bi bi-rulers"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-building-gear' %}active{% endif %}" data-icon="bi-building-gear" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Structure (bi-building-gear)"><i class="bi bi-building-gear"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cone-striped' %}active{% endif %}" data-icon="bi-cone-striped" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Safety Warning (bi-cone-striped)"><i class="bi bi-cone-striped"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-check' %}active{% endif %}" data-icon="bi-file-earmark-check" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="DISCOM Permit (bi-file-earmark-check)"><i class="bi bi-file-earmark-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-text' %}active{% endif %}" data-icon="bi-file-earmark-text" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Contract (bi-file-earmark-text)"><i class="bi bi-file-earmark-text"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-arrow-up' %}active{% endif %}" data-icon="bi-file-earmark-arrow-up" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Net Meter Apply (bi-file-earmark-arrow-up)"><i class="bi bi-file-earmark-arrow-up"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-lock-fill' %}active{% endif %}" data-icon="bi-file-earmark-lock-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Signoff (bi-file-earmark-lock-fill)"><i class="bi bi-file-earmark-lock-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-shield-check' %}active{% endif %}" data-icon="bi-shield-check" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Safety Audit (bi-shield-check)"><i class="bi bi-shield-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-patch-check-fill' %}active{% endif %}" data-icon="bi-patch-check-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="CEIG Clearance (bi-patch-check-fill)"><i class="bi bi-patch-check-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-award-fill' %}active{% endif %}" data-icon="bi-award-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Subsidy (bi-award-fill)"><i class="bi bi-award-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-clipboard-check' %}active{% endif %}" data-icon="bi-clipboard-check" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Checklist (bi-clipboard-check)"><i class="bi bi-clipboard-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-geo-alt-fill' %}active{% endif %}" data-icon="bi-geo-alt-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Site Survey (bi-geo-alt-fill)"><i class="bi bi-geo-alt-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-compass-fill' %}active{% endif %}" data-icon="bi-compass-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Orientation (bi-compass-fill)"><i class="bi bi-compass-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-truck' %}active{% endif %}" data-icon="bi-truck" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Dispatch (bi-truck)"><i class="bi bi-truck"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-box-seam-fill' %}active{% endif %}" data-icon="bi-box-seam-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Material Box (bi-box-seam-fill)"><i class="bi bi-box-seam-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-houses-fill' %}active{% endif %}" data-icon="bi-houses-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Residential (bi-houses-fill)"><i class="bi bi-houses-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-signpost-2-fill' %}active{% endif %}" data-icon="bi-signpost-2-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Field Route (bi-signpost-2-fill)"><i class="bi bi-signpost-2-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-speedometer2' %}active{% endif %}" data-icon="bi-speedometer2" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Meter Read (bi-speedometer2)"><i class="bi bi-speedometer2"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-pin-map-fill' %}active{% endif %}" data-icon="bi-pin-map-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Feasibility (bi-pin-map-fill)"><i class="bi bi-pin-map-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-star-fill' %}active{% endif %}" data-icon="bi-star-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Initial / Star (bi-star-fill)"><i class="bi bi-star-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-check2-circle' %}active{% endif %}" data-icon="bi-check2-circle" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Milestone Passed (bi-check2-circle)"><i class="bi bi-check2-circle"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-check-all' %}active{% endif %}" data-icon="bi-check-all" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Tasks Done (bi-check-all)"><i class="bi bi-check-all"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-trophy-fill' %}active{% endif %}" data-icon="bi-trophy-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Commissioned (bi-trophy-fill)"><i class="bi bi-trophy-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-flag-fill' %}active{% endif %}" data-icon="bi-flag-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Milestone Flag (bi-flag-fill)"><i class="bi bi-flag-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-handshake-fill' %}active{% endif %}" data-icon="bi-handshake-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Customer Handover (bi-handshake-fill)"><i class="bi bi-handshake-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-chat-dots-fill' %}active{% endif %}" data-icon="bi-chat-dots-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Consultation (bi-chat-dots-fill)"><i class="bi bi-chat-dots-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-telephone-fill' %}active{% endif %}" data-icon="bi-telephone-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Call Done (bi-telephone-fill)"><i class="bi bi-telephone-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cash-coin' %}active{% endif %}" data-icon="bi-cash-coin" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Payment (bi-cash-coin)"><i class="bi bi-cash-coin"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-credit-card-2-front' %}active{% endif %}" data-icon="bi-credit-card-2-front" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Card / Invoice (bi-credit-card-2-front)"><i class="bi bi-credit-card-2-front"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-receipt' %}active{% endif %}" data-icon="bi-receipt" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Receipt (bi-receipt)"><i class="bi bi-receipt"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-hourglass-split' %}active{% endif %}" data-icon="bi-hourglass-split" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Waiting (bi-hourglass-split)"><i class="bi bi-hourglass-split"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-alarm' %}active{% endif %}" data-icon="bi-alarm" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Deadline (bi-alarm)"><i class="bi bi-alarm"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-calendar-check' %}active{% endif %}" data-icon="bi-calendar-check" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Scheduled (bi-calendar-check)"><i class="bi bi-calendar-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-exclamation-circle-fill' %}active{% endif %}" data-icon="bi-exclamation-circle-fill" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Hold / Issue (bi-exclamation-circle-fill)"><i class="bi bi-exclamation-circle-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-arrow-repeat' %}active{% endif %}" data-icon="bi-arrow-repeat" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-custom-input="editCustomIcon-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" title="Revision (bi-arrow-repeat)"><i class="bi bi-arrow-repeat"></i></button>
+</div>
+                                <div class="input-group input-group-sm mt-1.5">
+                                  <span class="input-group-text bg-light text-muted" style="font-size:0.75rem;"><i class="bi bi-search" style="margin-right: 6px;"></i> Custom Class:</span>
+                                  <input type="text" class="form-control form-control-sm font-monospace custom-icon-input" id="editCustomIcon-{{ s.pk }}" placeholder="e.g. bi-sun-fill" value="{{ s.icon }}" data-target-hidden="editIconInput-{{ s.pk }}" data-target-label="editIconLabel-{{ s.pk }}" data-preview-prefix="preview-{{ s.pk }}" style="border-radius: 0 6px 6px 0;">
+                                </div>
+                              </div>
+
+                              <div class="form-check form-switch p-3 rounded-2 bg-light border mb-2">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="is_initial" id="editStageIsInitial-{{ s.pk }}" {% if s.is_initial %}checked{% endif %}>
+                                <label class="form-check-label small fw-semibold text-dark cursor-pointer" for="editStageIsInitial-{{ s.pk }}">
+                                  <i class="bi bi-star-fill text-warning" style="margin-right: 6px;"></i>Set as Default Initial Stage for New Solar Orders
+                                </label>
+                                <div class="text-muted small mt-0.5 ms-4" style="font-size: 0.72rem;">New solar orders will automatically start in this stage by default.</div>
+                              </div>
+
+                              <!-- Danger Zone: Delete Stage INSIDE Edit Modal -->
+                              {% if not s.is_system %}
+                                <div class="pt-3 border-top mt-3.5">
+                                  <div class="p-3 rounded-2 border d-flex align-items-center justify-content-between" style="background: #fef2f2; border-color: #fecaca !important;">
+                                    <div>
+                                      <div class="fw-bold text-danger d-flex align-items-center gap-1.5" style="font-size: 0.82rem;">
+                                        <i class="bi bi-trash3-fill" style="margin-right: 6px;"></i> Delete Pipeline Stage
+                                      </div>
+                                      <small class="text-muted d-block mt-0.5" style="font-size: 0.73rem;">
+                                        {% if s.bookings_count > 0 %}
+                                          Has <strong>{{ s.bookings_count }} active project(s)</strong> that need reassignment before removal.
+                                        {% else %}
+                                          Permanently remove this custom milestone from pipeline.
+                                        {% endif %}
+                                      </small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger fw-semibold d-inline-flex align-items-center gap-1 shadow-2xs flex-shrink-0" data-bs-toggle="modal" data-bs-target="#deleteStageModal-{{ s.pk }}" data-bs-dismiss="modal" style="font-size: 0.78rem; border-radius: 6px; padding: 0.35rem 0.75rem;">
+                                      <i class="bi bi-trash3" style="margin-right: 6px;"></i> Delete Stage
+                                    </button>
+                                  </div>
+                                </div>
+                              {% endif %}
+                            </div>
+
+                            <!-- Modal Footer -->
+                            <div class="modal-footer border-top bg-light d-flex align-items-center justify-content-between px-3.5 py-2.5">
+                              <div>
+                                {% if not s.is_system %}
+                                  <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1.5 shadow-2xs" data-bs-toggle="modal" data-bs-target="#deleteStageModal-{{ s.pk }}" data-bs-dismiss="modal" style="font-size: 0.78rem; font-weight: 600; border-radius: 6px;">
+                                    <i class="bi bi-trash3" style="margin-right: 6px;"></i> Delete
+                                  </button>
+                                {% else %}
+                                  <span class="text-muted small" style="font-size: 0.74rem;">
+                                    <i class="bi bi-shield-lock-fill text-secondary" style="margin-right: 6px;"></i> System Anchor Stage
+                                  </span>
+                                {% endif %}
+                              </div>
+                              <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal" style="font-size: 0.8rem; border-radius: 6px;">Cancel</button>
+                                <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" style="font-size: 0.8rem; border-radius: 6px;">
+                                  <i class="bi bi-check-lg" style="margin-right: 6px;"></i> Save Changes
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Delete Modal for Stage -->
+                    {% if not s.is_system %}
+                      <div class="modal fade" id="deleteStageModal-{{ s.pk }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content border-0 shadow">
+                            <div class="modal-header border-bottom p-3.5" style="border-color: #f1f5f9 !important;">
+                              <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+                                  <i class="bi bi-exclamation-triangle-fill fs-6"></i>
+                                </div>
+                                <div>
+                                  <h6 class="modal-title fw-bold text-danger font-heading mb-0">Confirm Stage Deletion</h6>
+                                  <small class="text-muted" style="font-size: 0.74rem;">Stage: <strong>{{ s.name }}</strong> ({{ s.code }})</small>
+                                </div>
+                              </div>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form method="post">
+                              {% csrf_token %}
+                              <input type="hidden" name="action" value="delete_pipeline_stage">
+                              <input type="hidden" name="stage_id" value="{{ s.pk }}">
+                              <div class="modal-body p-4">
+                                {% if s.bookings_count > 0 %}
+                                  <div class="alert alert-warning border mb-3 small d-flex align-items-start gap-2" style="border-radius: 8px;">
+                                    <i class="bi bi-exclamation-circle-fill text-warning fs-5 flex-shrink-0"></i>
+                                    <div>
+                                      There are currently <strong>{{ s.bookings_count }} active project(s)</strong> in this stage. Select which stage to safely reassign them to before deletion:
+                                    </div>
+                                  </div>
+                                  <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-dark">Reassign Active Projects To: <span class="text-danger">*</span></label>
+                                    <select name="reassign_to" class="form-select shadow-2xs" required style="border-radius: 8px; font-size: 0.86rem;">
+                                      {% for other in pipeline_stages %}
+                                        {% if other.pk != s.pk and other.is_active %}
+                                          <option value="{{ other.code }}">{{ other.order }}. {{ other.name }}</option>
+                                        {% endif %}
+                                      {% endfor %}
+                                    </select>
+                                  </div>
+                                {% else %}
+                                  <div class="p-3 rounded-2 bg-light border mb-2">
+                                    <p class="mb-0 text-muted small">Are you sure you want to delete this custom stage? There are currently no active projects in <strong>{{ s.name }}</strong>.</p>
+                                  </div>
+                                {% endif %}
+                              </div>
+                              <div class="modal-footer border-top bg-light d-flex align-items-center justify-content-between px-3.5 py-2.5">
+                                <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#editStageModal-{{ s.pk }}" style="font-size: 0.8rem; border-radius: 6px;">
+                                  <i class="bi bi-arrow-left" style="margin-right: 6px;"></i> Back to Edit
+                                </button>
+                                <button type="submit" class="btn btn-sm btn-danger fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" style="font-size: 0.8rem; border-radius: 6px;">
+                                  <i class="bi bi-trash3-fill" style="margin-right: 6px;"></i> Confirm Deletion
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                  {% empty %}
+                    <tr>
+                      <td colspan="7" class="text-center py-4 text-muted">No pipeline stages configured.</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            </div> <!-- End card-body -->
+          </div> <!-- End card -->
+
+          <!-- Add Stage Modal -->
+          <div class="modal fade" id="addStageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content border-0 shadow">
+                <div class="modal-header border-bottom p-3.5" style="border-color: #f1f5f9 !important;">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+                      <i class="bi bi-plus-circle-fill fs-6"></i>
+                    </div>
+                    <div>
+                      <h6 class="modal-title fw-bold text-dark font-heading mb-0">Add New Pipeline Stage</h6>
+                      <small class="text-muted" style="font-size: 0.74rem;">Define a new milestone in your solar project execution workflow</small>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="add_pipeline_stage">
+                  <div class="modal-body p-4">
+                    <!-- Live Appearance Preview -->
+                    <div class="p-3 rounded-3 border mb-3.5 d-flex align-items-center justify-content-between" style="background: #f8fafc; border-color: #e2e8f0;">
+                      <span class="small text-muted fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase;">Live Appearance:</span>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-2 p-1.5 d-flex align-items-center justify-content-center" id="previewBox-add" style="background-color: #05966915; border: 1px solid #05966940; width: 34px; height: 34px;">
+                          <i class="bi bi-file-earmark-check" id="previewIcon-add" style="color: #059669; font-size: 1rem;"></i>
+                        </div>
+                        <span class="fw-bold text-dark" id="previewTitle-add" style="font-size: 0.88rem;">New Stage</span>
+                        <span class="badge" id="previewBadge-add" style="background-color: #059669; color: #ffffff; font-size: 0.65rem; padding: 0.2rem 0.45rem;">#059669</span>
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary">Stage Name <span class="text-danger">*</span></label>
+                      <input type="text" name="name" class="form-control stage-name-input" placeholder="e.g. Net Metering / DISCOM Approval" data-preview-prefix="preview-add" required style="border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary">Insert After Stage</label>
+                      <select name="position_after" class="form-select shadow-2xs" style="border-radius: 8px; font-size: 0.86rem;">
+                        <option value="">At the End of Pipeline</option>
+                        {% for st in pipeline_stages %}
+                          <option value="{{ st.code }}">After {{ st.order }}. {{ st.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+
+                    <!-- Theme Color Chooser -->
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between mb-1.5">
+                        <span>Theme Color Accent</span>
+                        <span class="small font-monospace fw-bold" id="addColorCode" style="color: #059669;">#059669</span>
+                      </label>
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <input type="color" class="form-control form-control-color border cursor-pointer flex-shrink-0 stage-color-picker" id="addColorPicker" value="#059669" data-target-input="addColorInput" data-target-code="addColorCode" data-preview-prefix="preview-add" style="width:42px;height:38px;padding:3px;border-radius:8px;" title="Pick Any RGB Color">
+                        <input type="text" name="color" class="form-control font-monospace text-uppercase stage-color-input" id="addColorInput" value="#059669" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" placeholder="#059669" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" required style="font-size:0.86rem;font-weight:600;border-radius:8px;">
+                      </div>
+                      <div class="small text-muted mb-1.5" style="font-size:0.72rem;">Quick Curated Palette:</div>
+                      <div class="d-flex flex-wrap gap-1.5 p-2 rounded-2 border bg-white mb-2">
+<button type="button" class="btn-color-swatch" style="background:#059669;" data-color="#059669" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Emerald Green (#059669)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0d9488;" data-color="#0d9488" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Dark Teal (#0d9488)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0891b2;" data-color="#0891b2" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Ocean Cyan (#0891b2)"></button>
+<button type="button" class="btn-color-swatch" style="background:#0284c7;" data-color="#0284c7" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Sky Blue (#0284c7)"></button>
+<button type="button" class="btn-color-swatch" style="background:#2563eb;" data-color="#2563eb" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Royal Blue (#2563eb)"></button>
+<button type="button" class="btn-color-swatch" style="background:#4f46e5;" data-color="#4f46e5" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Indigo (#4f46e5)"></button>
+<button type="button" class="btn-color-swatch" style="background:#7c3aed;" data-color="#7c3aed" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Violet Purple (#7c3aed)"></button>
+<button type="button" class="btn-color-swatch" style="background:#c026d3;" data-color="#c026d3" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Magenta (#c026d3)"></button>
+<button type="button" class="btn-color-swatch" style="background:#db2777;" data-color="#db2777" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Ruby Pink (#db2777)"></button>
+<button type="button" class="btn-color-swatch" style="background:#e11d48;" data-color="#e11d48" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Crimson Rose (#e11d48)"></button>
+<button type="button" class="btn-color-swatch" style="background:#ef4444;" data-color="#ef4444" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Coral Red (#ef4444)"></button>
+<button type="button" class="btn-color-swatch" style="background:#ea580c;" data-color="#ea580c" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Solar Orange (#ea580c)"></button>
+<button type="button" class="btn-color-swatch" style="background:#f97316;" data-color="#f97316" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Tangerine (#f97316)"></button>
+<button type="button" class="btn-color-swatch" style="background:#f59e0b;" data-color="#f59e0b" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Solar Sun (#f59e0b)"></button>
+<button type="button" class="btn-color-swatch" style="background:#d97706;" data-color="#d97706" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Amber Gold (#d97706)"></button>
+<button type="button" class="btn-color-swatch" style="background:#65a30d;" data-color="#65a30d" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Lime Green (#65a30d)"></button>
+<button type="button" class="btn-color-swatch" style="background:#15803d;" data-color="#15803d" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Forest Green (#15803d)"></button>
+<button type="button" class="btn-color-swatch" style="background:#475569;" data-color="#475569" data-target-input="addColorInput" data-target-picker="addColorPicker" data-target-code="addColorCode" data-preview-prefix="preview-add" title="Slate Steel (#475569)"></button>
+                      </div>
+                    </div>
+
+                    <!-- Rich Icon Picker -->
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary d-flex align-items-center justify-content-between mb-1.5">
+                        <span>Stage Icon (Select from 48+ Solar Workflow Icons)</span>
+                        <span class="small fw-semibold text-dark" id="addIconLabel"><i class="bi bi-file-earmark-check me-1 text-success"></i>bi-file-earmark-check</span>
+                      </label>
+                      <input type="hidden" name="icon" id="addIconInput" value="bi-file-earmark-check">
+<div class="border rounded-2 p-2 bg-white icon-picker-grid mb-2" style="max-height: 165px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 4px;">
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-sun-fill' %}active{% endif %}" data-icon="bi-sun-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Solar Sun (bi-sun-fill)"><i class="bi bi-sun-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-brightness-high-fill' %}active{% endif %}" data-icon="bi-brightness-high-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Daylight (bi-brightness-high-fill)"><i class="bi bi-brightness-high-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-lightning-charge-fill' %}active{% endif %}" data-icon="bi-lightning-charge-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Grid Power (bi-lightning-charge-fill)"><i class="bi bi-lightning-charge-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-battery-charging' %}active{% endif %}" data-icon="bi-battery-charging" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Battery (bi-battery-charging)"><i class="bi bi-battery-charging"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-plug-fill' %}active{% endif %}" data-icon="bi-plug-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Plug / Inverter (bi-plug-fill)"><i class="bi bi-plug-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-power' %}active{% endif %}" data-icon="bi-power" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Energization (bi-power)"><i class="bi bi-power"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-activity' %}active{% endif %}" data-icon="bi-activity" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Telemetry (bi-activity)"><i class="bi bi-activity"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-reception-4' %}active{% endif %}" data-icon="bi-reception-4" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Signal (bi-reception-4)"><i class="bi bi-reception-4"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-tools' %}active{% endif %}" data-icon="bi-tools" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Tools / Install (bi-tools)"><i class="bi bi-tools"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-wrench-adjustable-circle' %}active{% endif %}" data-icon="bi-wrench-adjustable-circle" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Wrench (bi-wrench-adjustable-circle)"><i class="bi bi-wrench-adjustable-circle"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-hammer' %}active{% endif %}" data-icon="bi-hammer" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Civil Roof (bi-hammer)"><i class="bi bi-hammer"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-gear-wide-connected' %}active{% endif %}" data-icon="bi-gear-wide-connected" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Engineering (bi-gear-wide-connected)"><i class="bi bi-gear-wide-connected"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cpu-fill' %}active{% endif %}" data-icon="bi-cpu-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Microcontroller (bi-cpu-fill)"><i class="bi bi-cpu-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-rulers' %}active{% endif %}" data-icon="bi-rulers" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Measurement (bi-rulers)"><i class="bi bi-rulers"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-building-gear' %}active{% endif %}" data-icon="bi-building-gear" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Structure (bi-building-gear)"><i class="bi bi-building-gear"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cone-striped' %}active{% endif %}" data-icon="bi-cone-striped" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Safety Warning (bi-cone-striped)"><i class="bi bi-cone-striped"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-check' %}active{% endif %}" data-icon="bi-file-earmark-check" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="DISCOM Permit (bi-file-earmark-check)"><i class="bi bi-file-earmark-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-text' %}active{% endif %}" data-icon="bi-file-earmark-text" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Contract (bi-file-earmark-text)"><i class="bi bi-file-earmark-text"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-arrow-up' %}active{% endif %}" data-icon="bi-file-earmark-arrow-up" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Net Meter Apply (bi-file-earmark-arrow-up)"><i class="bi bi-file-earmark-arrow-up"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-file-earmark-lock-fill' %}active{% endif %}" data-icon="bi-file-earmark-lock-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Signoff (bi-file-earmark-lock-fill)"><i class="bi bi-file-earmark-lock-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-shield-check' %}active{% endif %}" data-icon="bi-shield-check" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Safety Audit (bi-shield-check)"><i class="bi bi-shield-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-patch-check-fill' %}active{% endif %}" data-icon="bi-patch-check-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="CEIG Clearance (bi-patch-check-fill)"><i class="bi bi-patch-check-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-award-fill' %}active{% endif %}" data-icon="bi-award-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Subsidy (bi-award-fill)"><i class="bi bi-award-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-clipboard-check' %}active{% endif %}" data-icon="bi-clipboard-check" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Checklist (bi-clipboard-check)"><i class="bi bi-clipboard-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-geo-alt-fill' %}active{% endif %}" data-icon="bi-geo-alt-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Site Survey (bi-geo-alt-fill)"><i class="bi bi-geo-alt-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-compass-fill' %}active{% endif %}" data-icon="bi-compass-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Orientation (bi-compass-fill)"><i class="bi bi-compass-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-truck' %}active{% endif %}" data-icon="bi-truck" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Dispatch (bi-truck)"><i class="bi bi-truck"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-box-seam-fill' %}active{% endif %}" data-icon="bi-box-seam-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Material Box (bi-box-seam-fill)"><i class="bi bi-box-seam-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-houses-fill' %}active{% endif %}" data-icon="bi-houses-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Residential (bi-houses-fill)"><i class="bi bi-houses-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-signpost-2-fill' %}active{% endif %}" data-icon="bi-signpost-2-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Field Route (bi-signpost-2-fill)"><i class="bi bi-signpost-2-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-speedometer2' %}active{% endif %}" data-icon="bi-speedometer2" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Meter Read (bi-speedometer2)"><i class="bi bi-speedometer2"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-pin-map-fill' %}active{% endif %}" data-icon="bi-pin-map-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Feasibility (bi-pin-map-fill)"><i class="bi bi-pin-map-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-star-fill' %}active{% endif %}" data-icon="bi-star-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Initial / Star (bi-star-fill)"><i class="bi bi-star-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-check2-circle' %}active{% endif %}" data-icon="bi-check2-circle" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Milestone Passed (bi-check2-circle)"><i class="bi bi-check2-circle"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-check-all' %}active{% endif %}" data-icon="bi-check-all" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Tasks Done (bi-check-all)"><i class="bi bi-check-all"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-trophy-fill' %}active{% endif %}" data-icon="bi-trophy-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Commissioned (bi-trophy-fill)"><i class="bi bi-trophy-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-flag-fill' %}active{% endif %}" data-icon="bi-flag-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Milestone Flag (bi-flag-fill)"><i class="bi bi-flag-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-handshake-fill' %}active{% endif %}" data-icon="bi-handshake-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Customer Handover (bi-handshake-fill)"><i class="bi bi-handshake-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-chat-dots-fill' %}active{% endif %}" data-icon="bi-chat-dots-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Consultation (bi-chat-dots-fill)"><i class="bi bi-chat-dots-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-telephone-fill' %}active{% endif %}" data-icon="bi-telephone-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Call Done (bi-telephone-fill)"><i class="bi bi-telephone-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-cash-coin' %}active{% endif %}" data-icon="bi-cash-coin" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Payment (bi-cash-coin)"><i class="bi bi-cash-coin"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-credit-card-2-front' %}active{% endif %}" data-icon="bi-credit-card-2-front" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Card / Invoice (bi-credit-card-2-front)"><i class="bi bi-credit-card-2-front"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-receipt' %}active{% endif %}" data-icon="bi-receipt" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Receipt (bi-receipt)"><i class="bi bi-receipt"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-hourglass-split' %}active{% endif %}" data-icon="bi-hourglass-split" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Waiting (bi-hourglass-split)"><i class="bi bi-hourglass-split"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-alarm' %}active{% endif %}" data-icon="bi-alarm" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Deadline (bi-alarm)"><i class="bi bi-alarm"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-calendar-check' %}active{% endif %}" data-icon="bi-calendar-check" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Scheduled (bi-calendar-check)"><i class="bi bi-calendar-check"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-exclamation-circle-fill' %}active{% endif %}" data-icon="bi-exclamation-circle-fill" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Hold / Issue (bi-exclamation-circle-fill)"><i class="bi bi-exclamation-circle-fill"></i></button>
+<button type="button" class="icon-picker-btn {% if s.icon == 'bi-arrow-repeat' %}active{% endif %}" data-icon="bi-arrow-repeat" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-custom-input="addCustomIcon" data-preview-prefix="preview-add" title="Revision (bi-arrow-repeat)"><i class="bi bi-arrow-repeat"></i></button>
+</div>
+                      <div class="input-group input-group-sm mt-1.5">
+                        <span class="input-group-text bg-light text-muted" style="font-size:0.75rem;"><i class="bi bi-search" style="margin-right: 6px;"></i> Custom Class:</span>
+                        <input type="text" class="form-control form-control-sm font-monospace custom-icon-input" id="addCustomIcon" placeholder="e.g. bi-sun-fill" value="bi-file-earmark-check" data-target-hidden="addIconInput" data-target-label="addIconLabel" data-preview-prefix="preview-add" style="border-radius: 0 6px 6px 0;">
+                      </div>
+                    </div>
+
+                    <div class="form-check form-switch p-3 rounded-2 bg-light border mb-2">
+                      <input class="form-check-input ms-0 me-2" type="checkbox" name="is_initial" id="addStageIsInitial">
+                      <label class="form-check-label small fw-semibold text-dark cursor-pointer" for="addStageIsInitial">
+                        <i class="bi bi-star-fill text-warning" style="margin-right: 6px;"></i>Set as Default Initial Stage for New Solar Orders
+                      </label>
+                      <div class="text-muted small mt-0.5 ms-4" style="font-size: 0.72rem;">New solar orders will automatically start in this stage by default.</div>
+                    </div>
+                  </div>
+                  <div class="modal-footer border-top bg-light d-flex align-items-center justify-content-end gap-2 px-3.5 py-2.5">
+                    <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal" style="font-size: 0.8rem; border-radius: 6px;">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold d-inline-flex align-items-center gap-1.5 shadow-2xs" style="font-size: 0.8rem; border-radius: 6px;">
+                      <i class="bi bi-plus-lg" style="margin-right: 6px;"></i> Create Stage
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div><!-- /subpane-pipeline -->
+      </div><!-- /utilitySubTabContent -->
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Automatically activate pipeline tab if tab=pipeline or hash is #pipeline
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('tab') === 'pipeline' || window.location.hash === '#pipeline' || urlParams.get('subtab') === 'pipeline') {
+    const pipelineBtn = document.getElementById('subtab-pipeline-btn');
+    if (pipelineBtn) {
+      const tab = new bootstrap.Tab(pipelineBtn);
+      tab.show();
+    }
+  }
+
+  // Update URL hash when clicking utility sub-tabs
+  const pipelineBtn = document.getElementById('subtab-pipeline-btn');
+  if (pipelineBtn) {
+    pipelineBtn.addEventListener('shown.bs.tab', function () {
+      history.replaceState(null, null, '?tab=utilities#pipeline');
+    });
+  }
+  const catalogBtn = document.getElementById('subtab-catalog-btn');
+  if (catalogBtn) {
+    catalogBtn.addEventListener('shown.bs.tab', function () {
+      history.replaceState(null, null, '?tab=utilities#catalog');
+    });
+  }
+
+  function updateLivePreview(prefix, color, icon, title) {
+    let boxId, iconId, titleId, badgeId, codeId;
+    if (prefix === 'preview-add') {
+      boxId = 'previewBox-add';
+      iconId = 'previewIcon-add';
+      titleId = 'previewTitle-add';
+      badgeId = 'previewBadge-add';
+      codeId = 'addColorCode';
+    } else {
+      const pk = prefix.replace('preview-', '');
+      boxId = 'previewBox-' + pk;
+      iconId = 'previewIcon-' + pk;
+      titleId = 'previewTitle-' + pk;
+      badgeId = 'previewBadge-' + pk;
+      codeId = 'editColorCode-' + pk;
+    }
+
+    const box = document.getElementById(boxId);
+    const iconEl = document.getElementById(iconId);
+    const titleEl = document.getElementById(titleId);
+    const badgeEl = document.getElementById(badgeId);
+    const codeEl = document.getElementById(codeId);
+
+    if (box && color) {
+      box.style.backgroundColor = color + '18';
+      box.style.borderColor = color + '40';
+    }
+    if (iconEl && color) iconEl.style.color = color;
+    if (iconEl && icon) iconEl.className = 'bi ' + icon;
+    if (titleEl && title !== undefined) titleEl.textContent = title || 'Stage Name';
+    if (badgeEl && color) {
+      badgeEl.style.backgroundColor = color;
+      badgeEl.textContent = color.toUpperCase();
+    }
+    if (codeEl && color) {
+      codeEl.textContent = color.toUpperCase();
+      codeEl.style.color = color;
+    }
+  }
+
+  // 1. Color Picker inputs
+  document.querySelectorAll('.stage-color-picker').forEach(picker => {
+    picker.addEventListener('input', function() {
+      const hex = this.value;
+      const targetInput = document.getElementById(this.dataset.targetInput);
+      if (targetInput) targetInput.value = hex.toUpperCase();
+      updateLivePreview(this.dataset.previewPrefix, hex, null, undefined);
+    });
+  });
+
+  // 2. Color Hex text inputs
+  document.querySelectorAll('.stage-color-input').forEach(input => {
+    input.addEventListener('input', function() {
+      let hex = this.value.trim();
+      if (!hex.startsWith('#')) hex = '#' + hex;
+      if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        const targetPicker = document.getElementById(this.dataset.targetPicker);
+        if (targetPicker) targetPicker.value = hex;
+        updateLivePreview(this.dataset.previewPrefix, hex, null, undefined);
+      }
+    });
+  });
+
+  // 3. Swatches
+  document.querySelectorAll('.btn-color-swatch').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const color = this.dataset.color;
+      const targetInput = document.getElementById(this.dataset.targetInput);
+      const targetPicker = document.getElementById(this.dataset.targetPicker);
+      if (targetInput) targetInput.value = color.toUpperCase();
+      if (targetPicker) targetPicker.value = color;
+      updateLivePreview(this.dataset.previewPrefix, color, null, undefined);
+    });
+  });
+
+  // 4. Icon picker buttons
+  document.querySelectorAll('.icon-picker-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const icon = this.dataset.icon;
+      const container = this.closest('.icon-picker-grid');
+      if (container) {
+        container.querySelectorAll('.icon-picker-btn').forEach(b => b.classList.remove('active'));
+      }
+      this.classList.add('active');
+
+      const targetHidden = document.getElementById(this.dataset.targetHidden);
+      const targetLabel = document.getElementById(this.dataset.targetLabel);
+      const customInput = document.getElementById(this.dataset.customInput);
+
+      if (targetHidden) targetHidden.value = icon;
+      if (customInput) customInput.value = icon;
+      if (targetLabel) targetLabel.innerHTML = '<i class="bi ' + icon + ' me-1 text-success"></i>' + icon;
+
+      updateLivePreview(this.dataset.previewPrefix, null, icon, undefined);
+    });
+  });
+
+  // 5. Custom icon text inputs
+  document.querySelectorAll('.custom-icon-input').forEach(input => {
+    input.addEventListener('input', function() {
+      const icon = this.value.trim();
+      const targetHidden = document.getElementById(this.dataset.targetHidden);
+      const targetLabel = document.getElementById(this.dataset.targetLabel);
+
+      if (targetHidden) targetHidden.value = icon;
+      if (targetLabel) targetLabel.innerHTML = '<i class="bi ' + icon + ' me-1 text-success"></i>' + icon;
+
+      const modal = this.closest('.modal-body');
+      if (modal) {
+        modal.querySelectorAll('.icon-picker-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.icon === icon);
+        });
+      }
+
+      updateLivePreview(this.dataset.previewPrefix, null, icon, undefined);
+    });
+  });
+
+  // 6. Stage name inputs
+  document.querySelectorAll('.stage-name-input').forEach(input => {
+    input.addEventListener('input', function() {
+      updateLivePreview(this.dataset.previewPrefix, null, null, this.value.trim());
+    });
+  });
+});
+</script>
+{% endblock %}

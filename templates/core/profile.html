@@ -1,0 +1,422 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Agent Profile | {{ agent_user.get_full_name|default:agent_user.username }} | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+  <a href="{% url 'core:dashboard' %}" class="text-secondary text-decoration-none" style="font-size:0.85rem;">Dashboard</a>
+  <span class="text-muted mx-1">/</span>
+  {% if not is_own_profile %}
+  <a href="{% url 'reports:staff_performance' %}" class="text-secondary text-decoration-none" style="font-size:0.85rem;">Staff Directory</a>
+  <span class="text-muted mx-1">/</span>
+  <span class="fw-semibold text-dark" style="font-size:0.85rem;">{{ agent_user.get_full_name|default:agent_user.username }}</span>
+{% else %}
+  <span class="fw-semibold text-dark" style="font-size:0.85rem;">Agent Profile</span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-3" style="max-width: 1200px;">
+
+  <!-- Hero Profile Header Card -->
+  <div class="card-saas mb-4 p-4 border bg-white shadow-xs position-relative overflow-hidden" style="border-radius: 14px; border-color: #e2e8f0 !important;">
+    <!-- Top subtle accent bar -->
+    <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%);"></div>
+
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-2">
+      <!-- Left: Avatar & Info -->
+      <div class="d-flex align-items-center gap-3.5">
+        <!-- Avatar with Upload & Quick Remove Controls -->
+        <div class="position-relative flex-shrink-0">
+          <div id="profileAvatarPreview"
+               class="rounded-circle d-flex align-items-center justify-content-center shadow-sm overflow-hidden"
+               style="width: 88px; height: 88px; border: 3px solid #ecfdf5; background: #059669; color: #ffffff; font-size: 2rem; font-weight: 700; {% if profile.avatar_url %}background-image: url('{{ profile.avatar_url }}'); background-size: cover; background-position: center;{% endif %}">
+            {% if not profile.avatar_url %}
+              <span id="avatarInitialsFallback">{{ agent_user.first_name|default:agent_user.username|slice:":2"|upper }}</span>
+            {% endif %}
+          </div>
+          <!-- Camera Upload Button Overlay -->
+          <label for="avatarInputTrigger"
+                 class="position-absolute bottom-0 end-0 rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center border border-2 border-white cursor-pointer hover-scale"
+                 style="width: 30px; height: 30px; color: #059669; cursor: pointer; transition: transform 0.15s ease;"
+                 title="Upload / Change Photo">
+            <i class="bi bi-camera-fill" style="font-size: 0.85rem;"></i>
+          </label>
+          <!-- Quick Remove Photo Button Overlay -->
+          <button type="button"
+                  id="removePhotoBtn"
+                  class="position-absolute top-0 end-0 rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center border border-2 border-white text-danger cursor-pointer hover-scale {% if not profile.avatar_url %}d-none{% endif %}"
+                  style="width: 26px; height: 26px; font-size: 0.72rem; transition: transform 0.15s ease;"
+                  title="Remove Profile Photo">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </div>
+
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h4 class="fw-bold text-dark font-heading mb-0" style="font-size: 1.35rem; letter-spacing: -0.01em;">
+              {{ agent_user.get_full_name|default:agent_user.username }}
+            </h4>
+            <span class="badge rounded-pill fw-semibold" style="font-size: 0.72rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+              <i class="bi bi-patch-check-fill me-1"></i>{{ profile.get_role_display|default:"Staff Agent" }}
+            </span>
+            <span class="badge rounded-pill fw-medium" style="font-size: 0.72rem; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0;">
+              Active Account
+            </span>
+          </div>
+
+          <div class="text-muted d-flex align-items-center gap-3 flex-wrap" style="font-size: 0.82rem;">
+            <span><i class="bi bi-person me-1 text-secondary"></i>@{{ agent_user.username }}</span>
+            {% if agent_user.email %}
+              <span><i class="bi bi-envelope me-1 text-secondary"></i>{{ agent_user.email }}</span>
+            {% endif %}
+            {% if profile.phone %}
+              <span><i class="bi bi-telephone me-1 text-secondary"></i>{{ profile.phone }}</span>
+            {% endif %}
+            {% if profile.designation %}
+              <span class="badge bg-light text-secondary border"><i class="bi bi-briefcase me-1"></i>{{ profile.designation }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Tabs & Content -->
+  <div class="card-saas border bg-white shadow-xs" style="border-radius: 14px; border-color: #e2e8f0 !important; overflow: hidden;">
+    <!-- Tabs Header -->
+    <div class="px-3 pt-2.5 border-bottom bg-light bg-opacity-50" style="border-color: #f1f5f9 !important;">
+      <ul class="nav nav-tabs border-0 gap-2" id="profileTabNav" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active py-2.5 px-3 fw-semibold d-flex align-items-center gap-1.5"
+                  id="tab-edit-details"
+                  data-bs-toggle="tab"
+                  data-bs-target="#pane-edit-details"
+                  type="button"
+                  role="tab"
+                  style="font-size: 0.85rem;">
+            <i class="bi bi-person-gear text-primary"></i>
+            <span>Edit Profile Details</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link py-2.5 px-3 fw-semibold d-flex align-items-center gap-1.5 text-secondary"
+                  id="tab-security"
+                  data-bs-toggle="tab"
+                  data-bs-target="#pane-security"
+                  type="button"
+                  role="tab"
+                  style="font-size: 0.85rem;">
+            <i class="bi bi-shield-lock-fill text-danger"></i>
+            <span>Password & Security</span>
+          </button>
+        </li>
+        
+      </ul>
+    </div>
+
+    <!-- Tabs Content Body -->
+    <div class="tab-content p-3 p-md-4" id="profileTabContent">
+
+      <!-- ═══════════════════════════════════════════════════════════════════
+           TAB 1: EDIT PROFILE DETAILS
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="tab-pane fade show active" id="pane-edit-details" role="tabpanel" aria-labelledby="tab-edit-details">
+        <form method="post" action="{% url 'core:profile' %}" enctype="multipart/form-data" id="profileForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_profile">
+          <input type="hidden" name="remove_avatar" id="removeAvatarInput" value="0">
+          <input type="file" name="avatar" id="avatarInputTrigger" class="d-none" accept="image/*">
+
+          <!-- Form Fields Grid -->
+          <div class="row g-3 mb-3">
+            <!-- First Name -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">
+                First Name <span class="text-danger">*</span>
+              </label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                <input type="text" name="first_name" required value="{{ agent_user.first_name }}" class="form-control border-start-0" placeholder="e.g. Anas">
+              </div>
+            </div>
+
+            <!-- Last Name -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">Last Name</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-person"></i></span>
+                <input type="text" name="last_name" value="{{ agent_user.last_name }}" class="form-control border-start-0" placeholder="e.g. Payya">
+              </div>
+            </div>
+
+            <!-- Username (Readonly) -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">Username (System Handle)</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-light border-end-0 text-muted">@</span>
+                <input type="text" value="{{ agent_user.username }}" class="form-control bg-light border-start-0 text-secondary" readonly title="Username cannot be altered after registration">
+              </div>
+              <small class="text-muted" style="font-size: 0.72rem;">Usernames are permanently linked to your system audit records.</small>
+            </div>
+
+            <!-- Email Address -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">
+                Email Address <span class="text-danger">*</span>
+              </label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                <input type="email" name="email" required value="{{ agent_user.email }}" class="form-control border-start-0" placeholder="e.g. agent@zynsolar.com">
+              </div>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">Mobile / WhatsApp Number</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-telephone"></i></span>
+                <input type="text" name="phone" value="{{ profile.phone|default:'' }}" class="form-control border-start-0" placeholder="e.g. 9876543210">
+              </div>
+            </div>
+
+            <!-- Job Title / Designation -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">Job Title / Designation</label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-briefcase"></i></span>
+                <input type="text" name="designation" value="{{ profile.designation|default:'' }}" class="form-control border-start-0" placeholder="e.g. Senior Solar Engineer / Sales Consultant">
+              </div>
+            </div>
+
+            <!-- Assigned Role (Informative Readonly Badge) -->
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-dark mb-1">System Operational Role</label>
+              <div class="p-2 px-3 rounded-2 border bg-light d-flex align-items-center justify-content-between" style="border-color: #e2e8f0 !important;">
+                <span class="fw-semibold text-dark" style="font-size: 0.82rem;">
+                  <i class="bi bi-shield-check text-success me-1"></i>{{ profile.get_role_display|default:"Staff Agent" }}
+                </span>
+                <span class="badge rounded-pill bg-white text-secondary border" style="font-size: 0.68rem;">Admin Managed</span>
+              </div>
+              <small class="text-muted" style="font-size: 0.72rem;">Roles and permission levels are managed by System Administrators.</small>
+            </div>
+
+            <!-- Bio / Notes -->
+            <div class="col-md-12">
+              <label class="form-label small fw-bold text-dark mb-1">Short Bio / Operational Notes</label>
+              <textarea name="bio" rows="3" class="form-control" style="font-size: 0.84rem;" placeholder="Brief summary of your solar specialization, coverage territory, or credentials...">{{ profile.bio|default:'' }}</textarea>
+            </div>
+          </div>
+
+          <!-- Bottom Action Bar -->
+          <div class="pt-3 border-top d-flex align-items-center justify-content-between" style="border-color: #f1f5f9 !important;">
+            <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-info-circle me-1"></i>Changes will be applied across your workspace immediately.</span>
+            <button type="submit" class="btn btn-sm btn-solar-primary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 0.84rem;">
+              <i class="bi bi-check2-circle fs-6"></i>
+              <span>Save Profile Changes</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════════════
+           TAB 2: PASSWORD & SECURITY
+      ═══════════════════════════════════════════════════════════════════ -->
+      <div class="tab-pane fade" id="pane-security" role="tabpanel" aria-labelledby="tab-security">
+        <div class="row">
+          <div class="col-lg-7">
+            <form method="post" action="{% url 'core:profile' %}" id="passwordForm">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="change_password">
+
+              <div class="mb-3.5">
+                <h6 class="fw-bold text-dark font-heading mb-1" style="font-size: 0.95rem;">
+                  <i class="bi bi-key-fill text-warning me-1.5"></i>Change Account Password
+                </h6>
+                <p class="text-muted small mb-0" style="font-size: 0.78rem;">
+                  Protect your solar workspace. Ensure your new password is at least 6 characters with a combination of letters and numbers.
+                </p>
+              </div>
+
+              <!-- Current Password -->
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-dark mb-1">
+                  Current Password <span class="text-danger">*</span>
+                </label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-lock"></i></span>
+                  <input type="password" name="current_password" id="inputCurrentPass" required class="form-control border-start-0 border-end-0" placeholder="Enter current password">
+                  <button type="button" class="input-group-text bg-white border-start-0 text-secondary toggle-pass-btn" data-target="inputCurrentPass">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- New Password -->
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-dark mb-1">
+                  New Password <span class="text-danger">*</span>
+                </label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-shield-lock"></i></span>
+                  <input type="password" name="new_password" id="inputNewPass" required minlength="6" class="form-control border-start-0 border-end-0" placeholder="Create new password (min. 6 chars)">
+                  <button type="button" class="input-group-text bg-white border-start-0 text-secondary toggle-pass-btn" data-target="inputNewPass">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <small class="text-muted" style="font-size: 0.72rem;">Must be at least 6 characters long.</small>
+              </div>
+
+              <!-- Confirm New Password -->
+              <div class="mb-3.5">
+                <label class="form-label small fw-bold text-dark mb-1">
+                  Confirm New Password <span class="text-danger">*</span>
+                </label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-shield-check"></i></span>
+                  <input type="password" name="confirm_password" id="inputConfirmPass" required minlength="6" class="form-control border-start-0 border-end-0" placeholder="Repeat new password">
+                  <button type="button" class="input-group-text bg-white border-start-0 text-secondary toggle-pass-btn" data-target="inputConfirmPass">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-3 mb-3.5 rounded-3 border bg-light shadow-2xs" style="border-color: #e2e8f0 !important;">
+                <div class="d-flex align-items-center gap-2 text-dark fw-semibold small mb-1" style="font-size: 0.8rem;">
+                  <i class="bi bi-shield-shaded text-success"></i>
+                  <span>Active Session Retention</span>
+                </div>
+                <p class="text-muted small mb-0" style="font-size: 0.74rem;">
+                  When you change your password, your current active session will stay securely logged in automatically.
+                </p>
+              </div>
+
+              <button type="submit" class="btn btn-sm btn-dark px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" style="font-size: 0.84rem;">
+                <i class="bi bi-key-fill text-warning"></i>
+                <span>Update Password</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Security Tips Sidecard -->
+          <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="p-3.5 rounded-3 border bg-white shadow-2xs" style="border-color: #e2e8f0 !important;">
+              <h6 class="fw-bold text-dark font-heading mb-2" style="font-size: 0.88rem;">
+                <i class="bi bi-shield-check text-primary me-1"></i>Security Best Practices
+              </h6>
+              <ul class="text-muted small ps-3 mb-0 d-flex flex-column gap-2" style="font-size: 0.78rem; line-height: 1.45;">
+                <li>Use a unique password that you do not share across other platforms.</li>
+                <li>Avoid obvious words such as your company name, vehicle plate, or birth year.</li>
+                <li>Always sign out when accessing the CRM on shared field terminals or customer devices.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+    </div>
+  </div>
+
+</div>
+
+<!-- Interactive JavaScript for Live Avatar Preview & Eye Password Toggle -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const avatarInput = document.getElementById('avatarInputTrigger');
+  const heroAvatarPreview = document.getElementById('profileAvatarPreview');
+  const heroInitials = document.getElementById('avatarInitialsFallback');
+  const removePhotoBtn = document.getElementById('removePhotoBtn');
+  const removeAvatarInput = document.getElementById('removeAvatarInput');
+
+  // Live Avatar Photo Preview directly from hero avatar
+  if (avatarInput) {
+    avatarInput.addEventListener('change', function(e) {
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        const previewUrl = URL.createObjectURL(file);
+        if (heroAvatarPreview) {
+          heroAvatarPreview.style.backgroundImage = `url('${previewUrl}')`;
+          heroAvatarPreview.style.backgroundSize = 'cover';
+          heroAvatarPreview.style.backgroundPosition = 'center';
+          if (heroInitials) heroInitials.style.display = 'none';
+        }
+        if (removeAvatarInput) removeAvatarInput.value = '0';
+        if (removePhotoBtn) removePhotoBtn.classList.remove('d-none');
+        if (window.SolarToast) SolarToast.info('Photo selected! Click "Save Profile Changes" to update.');
+      }
+    });
+  }
+
+  // Remove Photo handler
+  if (removePhotoBtn) {
+    removePhotoBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (confirm('Are you sure you want to remove your profile photo?')) {
+        if (removeAvatarInput) removeAvatarInput.value = '1';
+        if (avatarInput) avatarInput.value = '';
+        if (heroAvatarPreview) {
+          heroAvatarPreview.style.backgroundImage = 'none';
+          if (heroInitials) heroInitials.style.display = 'inline-block';
+        }
+        this.classList.add('d-none');
+        if (window.SolarToast) SolarToast.warning('Photo marked for removal. Click "Save Profile Changes" to confirm.');
+      }
+    });
+  }
+
+  // Toggle Password Show/Hide Buttons
+  document.querySelectorAll('.toggle-pass-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.dataset.target;
+      const input = document.getElementById(targetId);
+      if (input) {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        this.innerHTML = isPass ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+      }
+    });
+  });
+});
+  }
+
+  // Remove Photo handler
+  if (removePhotoBtn) {
+    removePhotoBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (confirm('Are you sure you want to remove your profile photo?')) {
+        if (removeAvatarInput) removeAvatarInput.value = '1';
+        if (avatarInput) avatarInput.value = '';
+
+        if (heroAvatarPreview) {
+          heroAvatarPreview.style.backgroundImage = 'none';
+          if (heroInitials) heroInitials.style.display = 'inline-block';
+        }
+
+        if (formAvatarThumb) {
+          formAvatarThumb.style.backgroundImage = 'none';
+          formAvatarThumb.style.border = 'none';
+          if (formInitials) formInitials.style.display = 'inline-block';
+        }
+
+        this.style.display = 'none';
+        if (window.SolarToast) SolarToast.warning('Photo marked for removal. Click "Save Profile Changes" to confirm.');
+      }
+    });
+  }
+
+  // Toggle Password Show/Hide Buttons
+  document.querySelectorAll('.toggle-pass-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const targetId = this.dataset.target;
+      const input = document.getElementById(targetId);
+      if (input) {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        this.innerHTML = isPass ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

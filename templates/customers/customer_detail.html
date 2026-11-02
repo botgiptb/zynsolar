@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+  /* Customer Detail: Pure Colored Fonts & Clean Transparent Backgrounds */
+  .kpi-card .kpi-icon-box {
+    background: transparent !important;
+    border: none !important;
+    width: auto !important;
+    height: auto !important;
+    font-size: 1.35rem !important;
+    padding: 0 !important;
+  }
+</style>
+{% endblock %}
+
+
+{% block title %}{{ customer.name }} ({{ customer.customer_id }}) | Customer Profile | Solar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.85rem;">
+  <a href="{% url 'customers:list' %}" class="text-secondary text-decoration-none fw-medium">Customers</a>
+  <span class="text-muted opacity-50">/</span>
+  <span class="text-dark fw-bold text-truncate">{{ customer.name }}</span>
+  <span class="badge bg-light text-secondary border font-monospace ms-1" style="font-size: 0.70rem;">{{ customer.customer_id }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- ── Customer Executive Header ── -->
+  <div class="card-saas p-3 mb-3">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <div class="user-avatar-circle" style="width:40px;height:40px;font-size:1rem;background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;border-radius:8px;flex-shrink:0;">
+          {{ customer.name|slice:":1"|upper }}
+        </div>
+        <div>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <h4 class="mb-0 fw-bold text-dark font-heading">{{ customer.name }}</h4>
+            <span class="font-monospace text-muted fw-bold" style="font-size:0.78rem;">#{{ customer.customer_id }}</span>
+            {% if customer.status == 'ACTIVE' %}
+              <span class="fw-bold text-success d-inline-flex align-items-center gap-1" style="font-size:0.75rem;">
+                <span class="status-dot-pulse" style="width:6px;height:6px;background:#10b981;"></span> Active
+              </span>
+            {% else %}
+              <span class="fw-bold text-danger" style="font-size:0.75rem;">Archived</span>
+            {% endif %}
+          </div>
+          <div class="text-muted mt-1" style="font-size:0.74rem;">
+            <span class="fw-semibold text-secondary me-1" style="font-size:0.75rem;">{{ customer.get_customer_type_display }}</span> &bull;
+            <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ customer.city }}, {{ customer.state }}
+            &bull; Registered {{ customer.created_at|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <a href="{% url 'bookings:create' %}?customer_id={{ customer.pk }}" class="btn btn-sm btn-solar-primary shadow-xs">
+          <i class="bi bi-plus-lg me-1"></i> Book Solar Order
+        </a>
+        <a href="{% url 'customers:edit' customer.pk %}" class="btn btn-sm btn-solar-outline shadow-xs">
+          <i class="bi bi-pencil me-1"></i> Edit Profile
+        </a>
+        <button type="button"
+                class="btn btn-sm btn-solar-outline {% if customer.status == 'ACTIVE' %}text-warning{% else %}text-success{% endif %}"
+                data-bs-toggle="modal" data-bs-target="#archiveModal"
+                title="{% if customer.status == 'ACTIVE' %}Archive Customer{% else %}Restore Customer{% endif %}">
+          {% if customer.status == 'ACTIVE' %}
+            <i class="bi bi-archive me-1"></i> Archive
+          {% else %}
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Restore
+          {% endif %}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Profile Completeness Alert ── -->
+  {% if not customer.email or not customer.consumer_number %}
+  <div class="alert d-flex align-items-center gap-3 mb-3" style="background:#ffffff;border:1px solid var(--border);border-left:3.5px solid #f59e0b;border-radius:var(--radius-md);" role="alert">
+    <i class="bi bi-exclamation-circle-fill text-warning fs-5 flex-shrink-0"></i>
+    <div class="small">
+      <strong class="text-dark">Profile incomplete —</strong>
+      {% if not customer.email and not customer.consumer_number %}
+        Email address and Electricity Consumer Number are missing.
+      {% elif not customer.email %}
+        Email address is missing.
+      {% else %}
+        Electricity Consumer Number is missing.
+      {% endif %}
+      <a href="{% url 'customers:edit' customer.pk %}" class="fw-bold text-warning-emphasis ms-1">Complete profile &rarr;</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── KPI Ribbon ── -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+          <span class="kpi-title">Solar Orders</span>
+          <div class="kpi-icon-box"><i class="bi bi-lightning-charge-fill"></i></div>
+        </div>
+        <div class="kpi-value">{{ customer.total_bookings }}</div>
+        <div class="kpi-subtitle text-muted">{{ customer.bookings.count }} Solar Project{{ customer.bookings.count|pluralize }}</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+          <span class="kpi-title">Lifetime Contract</span>
+          <div class="kpi-icon-box"><i class="bi bi-cash-stack"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ total_value|floatformat:2|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Total project revenue</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-header">
+          <span class="kpi-title">Advance Received</span>
+          <div class="kpi-icon-box"><i class="bi bi-wallet2"></i></div>
+        </div>
+        <div class="kpi-value text-success">₹{{ total_advance|floatformat:2|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Deposited payments</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-rose">
+        <div class="kpi-header">
+          <span class="kpi-title">Balance Outstanding</span>
+          <div class="kpi-icon-box"><i class="bi bi-hourglass-split"></i></div>
+        </div>
+        <div class="kpi-value text-danger">₹{{ total_balance|floatformat:2|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Pending balance</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Two-Column Grid ── -->
+  <div class="row g-4">
+
+    <!-- LEFT COLUMN: Client Profile + Documents -->
+    <div class="col-lg-4">
+
+      <!-- Client Profile Card -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <h5 class="mb-0 fw-bold font-heading">Client Profile</h5>
+          <span class="fw-semibold text-muted small">{{ customer.get_customer_type_display }}</span>
+        </div>
+        <div class="card-body-clean">
+          <ul class="list-unstyled mb-0">
+
+            <!-- Phone -->
+            <li class="mb-3">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Primary Contact</span>
+              <div class="d-flex align-items-center justify-content-between mt-1">
+                <a href="tel:{{ customer.phone }}" class="text-dark fw-bold text-decoration-none fs-6">
+                  <i class="bi bi-telephone-fill text-success me-1"></i>{{ customer.phone }}
+                </a>
+                <div class="d-flex align-items-center gap-1">
+                  <a href="tel:{{ customer.phone }}" class="btn btn-xs btn-outline-secondary py-1 px-2" title="Call">
+                    <i class="bi bi-telephone text-success"></i> Call
+                  </a>
+                  <a href="https://wa.me/{% if customer.phone|slice:':1' != '+' %}91{% endif %}{{ customer.phone|cut:' '|cut:'+'|cut:'-' }}"
+                     target="_blank" class="btn btn-xs btn-outline-success py-1 px-2" title="WhatsApp Chat">
+                    <i class="bi bi-whatsapp"></i> Chat
+                  </a>
+                </div>
+              </div>
+              {% if customer.alt_phone %}
+                <div class="small text-muted mt-1"><i class="bi bi-telephone me-1"></i>Alt: {{ customer.alt_phone }}</div>
+              {% endif %}
+            </li>
+
+            <!-- Consumer Number -->
+            <li class="mb-3">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Electricity Consumer Number</span>
+              {% if customer.consumer_number %}
+                <div class="font-monospace fw-bold text-dark mt-1" style="font-size:0.88rem;">
+                  <i class="bi bi-hash text-success"></i>{{ customer.consumer_number }}
+                </div>
+              {% else %}
+                <span class="text-muted small">&mdash; No Consumer Number Recorded &mdash;</span>
+              {% endif %}
+            </li>
+
+            <!-- Email -->
+            <li class="mb-3">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Email Address</span>
+              {% if customer.email %}
+                <a href="mailto:{{ customer.email }}" class="text-dark text-decoration-none">
+                  <i class="bi bi-envelope-fill text-primary me-1"></i>{{ customer.email }}
+                </a>
+              {% else %}
+                <span class="text-muted small">&mdash; No Email Recorded &mdash;</span>
+              {% endif %}
+            </li>
+
+            <!-- Lead Source -->
+            <li class="mb-3">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Lead Source</span>
+              <span class="small text-dark"><i class="bi bi-funnel me-1 text-muted"></i>{{ customer.get_lead_source_display }}</span>
+            </li>
+
+            <!-- Business Fields -->
+            {% if customer.customer_type == 'BUSINESS' and customer.company_name %}
+            <li class="mb-3">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Company</span>
+              <span class="text-dark fw-medium">{{ customer.company_name }}</span>
+              {% if customer.tax_id %}
+                <span class="small text-muted d-block mt-1">GST / Tax ID: {{ customer.tax_id }}</span>
+              {% endif %}
+            </li>
+            {% endif %}
+
+            <!-- Site Address -->
+            <li class="mb-3 pt-3 border-top">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Site &amp; Roof Location</span>
+              <div class="text-dark fw-medium mt-1">
+                <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ customer.full_address }}
+              </div>
+              {% if customer.coordinates %}
+                <div class="mt-2">
+                  <a href="https://maps.google.com/?q={{ customer.coordinates }}" target="_blank"
+                     class="btn btn-sm btn-solar-outline py-1 px-2 text-primary" style="font-size:0.8rem;">
+                    <i class="bi bi-map-fill me-1"></i> Open in Google Maps
+                  </a>
+                </div>
+              {% endif %}
+            </li>
+
+            <!-- Internal Notes -->
+            {% if customer.notes %}
+            <li class="pt-3 border-top">
+              <span class="text-muted small text-uppercase fw-bold d-block" style="font-size:0.72rem;">Internal Notes</span>
+              <div class="p-3 bg-light rounded-3 mt-1 small text-secondary border">
+                {{ customer.notes|linebreaks }}
+              </div>
+            </li>
+            {% endif %}
+
+          </ul>
+        </div>
+      </div>
+
+      <!-- KYC & Documents Card -->
+      <div class="card-saas">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h6 class="mb-0 fw-bold text-dark font-heading">KYC &amp; Documents</h6>
+            <small class="text-muted" style="font-size:0.74rem;">
+              {% with cnt=attachments|length %}
+                {% if cnt %}{{ cnt }} file{{ cnt|pluralize }} attached{% else %}No files uploaded yet{% endif %}
+              {% endwith %}
+            </small>
+          </div>
+          <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#uploadCustomerDocModal">
+            <i class="bi bi-cloud-arrow-up me-1"></i> Upload
+          </button>
+        </div>
+
+        {% if attachments %}
+        <div class="card-body-clean p-0">
+          <ul class="list-group list-group-flush">
+            {% for att in attachments %}
+            <li class="list-group-item px-3 py-2 d-flex align-items-center gap-3 border-0 border-bottom">
+              <!-- File type icon -->
+              <div class="flex-shrink-0 text-center" style="width:32px;">
+                {% if att.is_pdf %}
+                  <i class="bi bi-file-earmark-pdf-fill text-danger fs-5"></i>
+                {% elif att.is_image %}
+                  <i class="bi bi-file-earmark-image-fill text-primary fs-5"></i>
+                {% else %}
+                  <i class="bi bi-file-earmark-fill text-secondary fs-5"></i>
+                {% endif %}
+              </div>
+              <!-- Info -->
+              <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-semibold text-dark text-truncate small">{{ att.title }}</div>
+                <div class="text-muted d-flex align-items-center gap-2" style="font-size:0.70rem;">
+                  <span>{{ att.get_category_display }}</span>
+                  <span>&bull;</span>
+                  <span>{{ att.file_size_formatted }}</span>
+                  <span>&bull;</span>
+                  <span>{{ att.uploaded_at|date:"M d, Y" }}</span>
+                </div>
+              </div>
+              <!-- Actions -->
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <a href="{{ att.file.url }}" target="_blank" class="btn btn-xs btn-light border" title="View / Download">
+                  <i class="bi bi-download"></i>
+                </a>
+                <form action="{% url 'customers:attachment_delete' customer.pk att.pk %}" method="post" class="d-inline"
+                      onsubmit="return confirm('Delete \'{{ att.title }}\'?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-xs btn-light border text-danger" title="Delete">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% else %}
+        <div class="p-4 text-center text-muted" style="font-size:0.84rem;">
+          <i class="bi bi-folder2-open fs-3 d-block mb-2 opacity-40"></i>
+          No documents uploaded yet.<br>
+          <span class="small">Electricity bills, KYC, property documents, etc.</span>
+        </div>
+        {% endif %}
+      </div>
+
+    </div><!-- /col-lg-4 -->
+
+    <!-- RIGHT COLUMN: Solar Projects + Activity -->
+    <div class="col-lg-8">
+
+      <!-- Associated Solar Projects -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="mb-0 fw-bold text-dark font-heading">
+              Associated Solar Projects
+              {% if bookings|length > 0 %}
+                <span class="badge bg-light text-secondary border ms-1" style="font-size:0.72rem;">{{ bookings|length }}</span>
+              {% endif %}
+            </h5>
+            <small class="text-muted" style="font-size:0.74rem;">System specifications and installation tracking</small>
+          </div>
+          <a href="{% url 'bookings:create' %}?customer_id={{ customer.pk }}" class="btn btn-solar-primary btn-sm d-inline-flex align-items-center gap-1">
+            <i class="bi bi-plus-lg"></i> New Order
+          </a>
+        </div>
+
+        {% if bookings %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size:0.84rem;">
+            <thead class="bg-light text-muted fw-semibold" style="font-size:0.72rem;text-transform:uppercase;">
+              <tr>
+                <th class="ps-3 py-2">Booking Ref</th>
+                <th class="py-2">Capacity</th>
+                <th class="py-2">Stage</th>
+                <th class="py-2">Date</th>
+                <th class="py-2 text-end">Contract</th>
+                <th class="py-2 text-end">Outstanding</th>
+                <th class="py-2 pe-3 text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in bookings %}
+              <tr>
+                <td class="ps-3 py-2.5">
+                  <a href="{{ b.get_absolute_url }}" class="fw-bold font-monospace text-primary text-decoration-none">
+                    {{ b.booking_ref }}
+                  </a>
+                  {% if b.assigned_team %}
+                    <div class="text-muted mt-0.5" style="font-size:0.71rem;">
+                      <i class="bi bi-people me-1"></i>{{ b.assigned_team.name }}
+                    </div>
+                  {% endif %}
+                </td>
+                <td class="py-2.5">
+                  <span class="fw-bold text-primary font-monospace" style="font-size:0.83rem;">
+                    {{ b.system_capacity_kw }} kW
+                  </span>
+                </td>
+                <td class="py-2.5">
+                  {% if b.is_cancelled %}
+                    <span class="fw-semibold text-danger" style="font-size:0.82rem;"><i class="bi bi-x-circle-fill me-1"></i>Cancelled</span>
+                  {% elif b.stage == 'NEW' %}
+                    <span class="fw-semibold text-primary" style="font-size:0.82rem;"><i class="bi bi-star-fill me-1"></i>New Lead</span>
+                  {% elif b.stage == 'SITE_SURVEY' %}
+                    <span class="fw-semibold" style="color: #ea580c; font-size:0.82rem;"><i class="bi bi-geo-alt-fill me-1"></i>Site Survey</span>
+                  {% elif b.stage == 'INSTALLATION' %}
+                    <span class="fw-semibold" style="color: #7c3aed; font-size:0.82rem;"><i class="bi bi-tools me-1"></i>Installation</span>
+                  {% elif b.stage == 'COMPLETED' %}
+                    <span class="fw-semibold text-success" style="font-size:0.82rem;"><i class="bi bi-check2-circle me-1"></i>Completed</span>
+                  {% else %}
+                    <span class="fw-semibold" style="color: {{ b.stage_info.header_text|default:b.stage_info.color|default:'#2563eb' }}; font-size:0.82rem;">
+                      <i class="bi {{ b.stage_info.icon|default:'bi-circle-fill' }} me-1"></i>{{ b.get_stage_display }}
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="py-2.5 text-muted small">{{ b.booking_date|date:"M d, Y" }}</td>
+                <td class="py-2.5 text-end font-monospace fw-bold text-dark">₹{{ b.booking_amount|floatformat:0|intcomma }}</td>
+                <td class="py-2.5 text-end">
+                  {% if b.balance_amount > 0 %}
+                    <span class="fw-bold font-monospace text-danger" style="font-size:0.84rem;">
+                      ₹{{ b.balance_amount|floatformat:0|intcomma }}
+                    </span>
+                  {% else %}
+                    <span class="fw-semibold text-success" style="font-size:0.82rem;">
+                      <i class="bi bi-check-circle-fill me-1"></i>Settled
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="py-2.5 pe-3 text-end">
+                  <a href="{{ b.get_absolute_url }}" class="btn btn-xs btn-solar-outline d-inline-flex align-items-center gap-1" style="font-size:0.75rem;padding:0.2rem 0.55rem;">
+                    <span>Open</span><i class="bi bi-arrow-right"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+          <i class="bi bi-lightning-charge fs-2 d-block mb-2 opacity-40"></i>
+          <p class="small mb-3">No solar projects registered for this customer yet.</p>
+          <a href="{% url 'bookings:create' %}?customer_id={{ customer.pk }}" class="btn btn-sm btn-solar-primary">
+            <i class="bi bi-plus-circle me-1"></i> Create First Order
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+
+
+      <!-- Recent Activity / Audit Timeline -->
+      {% with recent_logs=bookings|slice:":1" %}
+      {% if bookings %}
+      <div class="card-saas">
+        <div class="card-header-clean">
+          <h6 class="mb-0 fw-bold text-dark font-heading">Recent Activity</h6>
+          <span class="small text-muted">Last actions across all projects</span>
+        </div>
+        <div class="card-body-clean p-0">
+          <ul class="list-group list-group-flush">
+            {% for b in bookings|slice:":3" %}
+              {% for log in b.audit_logs.all|slice:":3" %}
+              <li class="list-group-item px-3 py-2 border-0 border-bottom d-flex align-items-start gap-3">
+                <div class="flex-shrink-0 mt-1">
+                  {% if log.action == 'CREATED' %}
+                    <i class="bi bi-plus-circle-fill text-success fs-5"></i>
+                  {% elif log.action == 'STAGE_TRANSITION' %}
+                    <i class="bi bi-arrow-right-circle-fill text-primary fs-5"></i>
+                  {% elif log.action == 'PAYMENT_UPDATED' %}
+                    <i class="bi bi-cash-coin text-warning fs-5"></i>
+                  {% elif log.action == 'CANCELLED' %}
+                    <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                  {% else %}
+                    <i class="bi bi-activity text-secondary fs-5"></i>
+                  {% endif %}
+                </div>
+                <div class="flex-grow-1">
+                  <div class="small fw-semibold text-dark">
+                    <a href="{{ b.get_absolute_url }}" class="text-primary text-decoration-none font-monospace" style="font-size:0.75rem;">{{ b.booking_ref }}</a>
+                    &mdash; {{ log.get_action_display }}
+                  </div>
+                  {% if log.notes %}
+                    <div class="text-muted small">{{ log.notes|truncatechars:80 }}</div>
+                  {% endif %}
+                  <div class="text-muted" style="font-size:0.70rem;">
+                    {{ log.user_name }} &bull; {{ log.timestamp|date:"M d, Y H:i" }}
+                  </div>
+                </div>
+              </li>
+              {% empty %}
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+    </div><!-- /col-lg-8 -->
+
+  </div><!-- /row -->
+</div><!-- /container-fluid -->
+
+
+<!-- ── Modal: Archive / Restore ── -->
+<div class="modal fade" id="archiveModal" tabindex="-1" aria-labelledby="archiveModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:var(--radius-lg);">
+      <div class="modal-header border-bottom">
+        <h5 class="modal-title fw-bold" id="archiveModalLabel">
+          {% if customer.status == 'ACTIVE' %}Archive Customer Account{% else %}Restore Customer Account{% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-2">
+          Are you sure you want to {% if customer.status == 'ACTIVE' %}archive{% else %}restore{% endif %}
+          customer <strong>{{ customer.name }}</strong>?
+        </p>
+        <div class="alert alert-warning small mb-0 d-flex align-items-center">
+          <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+          <div>Archiving removes the customer from quick booking selectors while maintaining full historical records.</div>
+        </div>
+      </div>
+      <div class="modal-footer border-top">
+        <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+        <form action="{% url 'customers:archive_toggle' customer.pk %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn {% if customer.status == 'ACTIVE' %}btn-solar-amber{% else %}btn-solar-primary{% endif %}">
+            Confirm {% if customer.status == 'ACTIVE' %}Archive{% else %}Restore{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Modal: Upload Customer Document ── -->
+<div class="modal fade" id="uploadCustomerDocModal" tabindex="-1" aria-labelledby="uploadCustomerDocModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold" id="uploadCustomerDocModalLabel">
+          <i class="bi bi-cloud-arrow-up-fill text-success me-2"></i>Upload Customer Document / KYC
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'customers:attachment_upload' customer.pk %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+            {{ attachment_form.category }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Document Title / Label <span class="text-danger">*</span></label>
+            {{ attachment_form.title }}
+            <div class="form-text small">e.g. Aadhaar Card Front &amp; Back, Electricity Bill (Oct 2026)</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Select File <span class="text-danger">*</span></label>
+            {{ attachment_form.file }}
+            <div class="form-text small">Accepts PDF, JPG, PNG, WEBP &mdash; Max 25 MB</div>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3 bg-light">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary">
+            <i class="bi bi-upload me-1"></i> Upload
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

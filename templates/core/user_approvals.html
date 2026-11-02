@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}User Approvals | Solar CRM Enterprise{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <span class="text-dark fw-bold text-truncate">User Approvals</span>
+  <span class="text-muted opacity-50 d-none d-sm-inline">&bull;</span>
+  <span class="text-muted small d-none d-sm-inline" style="font-size: 0.78rem;">Staff Access Control</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+  <!-- Page Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+      <h4 class="fw-bold text-dark mb-1 d-flex align-items-center gap-2">
+        <i class="bi bi-person-check-fill text-success"></i>
+        <span>User Approvals & Staff Access Control</span>
+      </h4>
+      <p class="text-muted small mb-0">Review pending user registrations, grant system permissions, and verify new team members.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'core:user_approvals' %}" class="btn btn-outline-secondary btn-sm rounded-3 d-inline-flex align-items-center gap-1 shadow-2xs">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+      </a>
+      <a href="{% url 'core:register' %}" class="btn btn-solar-primary btn-sm rounded-3 d-inline-flex align-items-center gap-1 shadow-2xs" style="background: #059669; border-color: #059669; color: white;">
+        <i class="bi bi-person-plus-fill"></i> New Registration Link
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Metric KPI Cards -->
+  <div class="row g-3 mb-4">
+    <!-- Pending Approvals -->
+    <div class="col-sm-6 col-xl-4">
+      <div class="card border rounded-4 shadow-sm p-3 h-100 bg-white" style="border-left: 5px solid #f59e0b !important;">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.04em;">Pending Approvals</span>
+            <h2 class="fw-bold text-dark mb-0 mt-1">{{ count_pending }}</h2>
+            <div class="small text-warning mt-1 fw-medium">
+              {% if count_pending > 0 %}
+                <i class="bi bi-exclamation-circle-fill me-1"></i>Action required by administrator
+              {% else %}
+                <i class="bi bi-check2-circle me-1"></i>No pending requests
+              {% endif %}
+            </div>
+          </div>
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: #fffbeb; color: #f59e0b; font-size: 1.5rem;">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Approved Staff -->
+    <div class="col-sm-6 col-xl-4">
+      <div class="card border rounded-4 shadow-sm p-3 h-100 bg-white" style="border-left: 5px solid #10b981 !important;">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.04em;">Active Staff Users</span>
+            <h2 class="fw-bold text-dark mb-0 mt-1">{{ count_approved }}</h2>
+            <div class="small text-success mt-1 fw-medium">
+              <i class="bi bi-shield-fill-check me-1"></i>Authorized system accounts
+            </div>
+          </div>
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: #ecfdf5; color: #10b981; font-size: 1.5rem;">
+            <i class="bi bi-people-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rejected Requests -->
+    <div class="col-sm-6 col-xl-4">
+      <div class="card border rounded-4 shadow-sm p-3 h-100 bg-white" style="border-left: 5px solid #ef4444 !important;">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <span class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem; letter-spacing: 0.04em;">Rejected Requests</span>
+            <h2 class="fw-bold text-dark mb-0 mt-1">{{ count_rejected }}</h2>
+            <div class="small text-danger mt-1 fw-medium">
+              <i class="bi bi-slash-circle me-1"></i>Access denied or blocked
+            </div>
+          </div>
+          <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background: #fef2f2; color: #ef4444; font-size: 1.5rem;">
+            <i class="bi bi-person-x-fill"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="card border rounded-4 shadow-sm bg-white overflow-hidden">
+    <div class="card-header bg-white border-bottom px-4 pt-3 pb-0">
+      <ul class="nav nav-tabs card-header-tabs border-0" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link fw-semibold px-4 py-3 border-0 border-bottom border-3 {% if active_tab == 'pending' %}active text-success border-success bg-transparent{% else %}text-secondary border-transparent{% endif %}" href="?tab=pending">
+            <i class="bi bi-clock-history me-1"></i> Pending Approvals
+            {% if count_pending > 0 %}
+              <span class="badge rounded-pill bg-warning text-dark ms-2">{{ count_pending }}</span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold px-4 py-3 border-0 border-bottom border-3 {% if active_tab == 'approved' %}active text-success border-success bg-transparent{% else %}text-secondary border-transparent{% endif %}" href="?tab=approved">
+            <i class="bi bi-check-circle-fill me-1"></i> Approved Staff
+            <span class="badge rounded-pill bg-light text-secondary ms-2 border">{{ count_approved }}</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link fw-semibold px-4 py-3 border-0 border-bottom border-3 {% if active_tab == 'rejected' %}active text-success border-success bg-transparent{% else %}text-secondary border-transparent{% endif %}" href="?tab=rejected">
+            <i class="bi bi-x-circle-fill me-1"></i> Rejected Requests
+            {% if count_rejected > 0 %}
+              <span class="badge rounded-pill bg-light text-danger ms-2 border">{{ count_rejected }}</span>
+            {% endif %}
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-body p-0">
+      {% if active_tab == 'pending' %}
+        <!-- TAB 1: PENDING APPROVALS TABLE -->
+        {% if pending_profiles %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                  <th class="ps-4 py-3">Applicant Name & Username</th>
+                  <th class="py-3">Role Requested</th>
+                  <th class="py-3">Contact Details</th>
+                  <th class="py-3">Registered Date</th>
+                  <th class="py-3 text-end pe-4">Approval Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                {% for prof in pending_profiles %}
+                  <tr>
+                    <td class="ps-4 py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-2xs" style="width: 42px; height: 42px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); font-size: 0.95rem;">
+                          {{ prof.user.first_name|default:prof.user.username|slice:":1"|upper }}
+                        </div>
+                        <div>
+                          <div class="fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</div>
+                          <div class="small text-muted"><i class="bi bi-at"></i>{{ prof.user.username }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-3">
+                      <span class="badge rounded-pill fw-medium text-dark bg-secondary-subtle px-3 py-2" style="font-size: 0.8rem;">
+                        <i class="bi bi-briefcase me-1 text-success"></i>{{ prof.get_role_display }}
+                      </span>
+                    </td>
+                    <td class="py-3">
+                      <div class="small text-dark"><i class="bi bi-envelope text-muted me-1"></i>{{ prof.user.email }}</div>
+                      {% if prof.phone %}
+                        <div class="small text-muted"><i class="bi bi-telephone text-muted me-1"></i>{{ prof.phone }}</div>
+                      {% endif %}
+                    </td>
+                    <td class="py-3">
+                      <div class="small fw-semibold text-dark">{{ prof.created_at|date:"M d, Y" }}</div>
+                      <div class="small text-muted">{{ prof.created_at|time:"h:i A" }}</div>
+                    </td>
+                    <td class="py-3 text-end pe-4">
+                      <div class="d-inline-flex gap-2">
+                        <!-- Quick Approve Trigger Modal -->
+                        <button type="button" class="btn btn-sm btn-success fw-semibold px-3 rounded-3 shadow-2xs d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#approveModal{{ prof.id }}">
+                          <i class="bi bi-check-lg"></i> Approve
+                        </button>
+                        <!-- Quick Reject Trigger Modal -->
+                        <button type="button" class="btn btn-sm btn-outline-danger px-3 rounded-3 d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#rejectModal{{ prof.id }}">
+                          <i class="bi bi-x-lg"></i> Reject
+                        </button>
+                      </div>
+
+                      <!-- Approve Modal -->
+                      <div class="modal fade" id="approveModal{{ prof.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content border-0 shadow-lg rounded-4">
+                            <form action="{% url 'core:user_approve' prof.id %}" method="post">
+                              {% csrf_token %}
+                              <div class="modal-header border-bottom p-3 bg-light">
+                                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                                  <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                                  <span>Approve Staff Registration</span>
+                                </h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body p-4">
+                                <p class="mb-3">
+                                  You are about to approve and activate the account for 
+                                  <strong>{{ prof.user.get_full_name|default:prof.user.username }}</strong> (<code>@{{ prof.user.username }}</code>).
+                                  They will immediately be able to sign in to the Solar CRM.
+                                </p>
+
+                                <div class="mb-3">
+                                  <label class="form-label fw-semibold small text-secondary">Assign System Role</label>
+                                  <select name="role" class="form-select">
+                                    <option value="SALES" {% if prof.role == 'SALES' %}selected{% endif %}>Sales Representative</option>
+                                    <option value="SURVEYOR" {% if prof.role == 'SURVEYOR' %}selected{% endif %}>Survey Engineer / Inspector</option>
+                                    <option value="INSTALLER" {% if prof.role == 'INSTALLER' %}selected{% endif %}>Installation Lead / Technician</option>
+                                    <option value="DRIVER" {% if prof.role == 'DRIVER' %}selected{% endif %}>Logistics & Operations Specialist</option>
+                                    <option value="SUPPORT" {% if prof.role == 'SUPPORT' %}selected{% endif %}>Customer Support</option>
+                                    <option value="ADMIN" {% if prof.role == 'ADMIN' %}selected{% endif %}>System Administrator</option>
+                                  </select>
+                                </div>
+
+                                <div class="form-check form-switch mb-2">
+                                  <input class="form-check-input" type="checkbox" name="grant_staff" value="1" id="staffSwitch{{ prof.id }}" {% if prof.role == 'ADMIN' %}checked{% endif %}>
+                                  <label class="form-check-label small fw-semibold text-secondary" for="staffSwitch{{ prof.id }}">
+                                    Grant Administrator Privileges (Access to User Approvals & System Settings)
+                                  </label>
+                                </div>
+                              </div>
+                              <div class="modal-footer border-top p-3 bg-light">
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-success btn-sm px-3 fw-semibold shadow-xs" style="background: #059669; border-color: #059669;">
+                                  <i class="bi bi-check2-circle me-1"></i> Confirm & Activate Account
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Reject Modal -->
+                      <div class="modal fade" id="rejectModal{{ prof.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                        <div class="modal-dialog modal-dialog-centered">
+                          <div class="modal-content border-0 shadow-lg rounded-4">
+                            <form action="{% url 'core:user_reject' prof.id %}" method="post">
+                              {% csrf_token %}
+                              <div class="modal-header border-bottom p-3 bg-light">
+                                <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                                  <i class="bi bi-x-circle-fill text-danger fs-5"></i>
+                                  <span>Reject Registration Request</span>
+                                </h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body p-4">
+                                <p class="mb-3 text-secondary">
+                                  Are you sure you want to decline access for 
+                                  <strong>@{{ prof.user.username }}</strong>? They will not be able to log in.
+                                </p>
+                                <div class="mb-3">
+                                  <label class="form-label fw-semibold small text-secondary">Rejection Reason (Optional)</label>
+                                  <textarea name="reason" class="form-control" rows="3" placeholder="e.g. Unverified email, unapproved department transfer, or duplicate submission..."></textarea>
+                                </div>
+                              </div>
+                              <div class="modal-footer border-top p-3 bg-light">
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger btn-sm px-3 fw-semibold">
+                                  <i class="bi bi-x-circle me-1"></i> Reject Registration
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5 px-3">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 64px; height: 64px; background: #ecfdf5; color: #10b981; font-size: 1.8rem;">
+              <i class="bi bi-check2-all"></i>
+            </div>
+            <h5 class="fw-bold text-dark mb-1">All Caught Up!</h5>
+            <p class="text-muted small mb-3">There are no pending user registration requests waiting for approval.</p>
+            <a href="?tab=approved" class="btn btn-outline-secondary btn-sm rounded-3">
+              View Active Staff Accounts
+            </a>
+          </div>
+        {% endif %}
+
+      {% elif active_tab == 'approved' %}
+        <!-- TAB 2: APPROVED USERS TABLE -->
+        {% if approved_profiles %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                  <th class="ps-4 py-3">Staff User</th>
+                  <th class="py-3">Role</th>
+                  <th class="py-3">Contact</th>
+                  <th class="py-3">Status</th>
+                  <th class="py-3">Approved By & Date</th>
+                  <th class="py-3 text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                {% for prof in approved_profiles %}
+                  <tr>
+                    <td class="ps-4 py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-2xs" style="width: 40px; height: 40px; background: #059669; font-size: 0.9rem;">
+                          {{ prof.user.first_name|default:prof.user.username|slice:":1"|upper }}
+                        </div>
+                        <div>
+                          <div class="fw-bold text-dark d-flex align-items-center gap-2">
+                            <span>{{ prof.user.get_full_name|default:prof.user.username }}</span>
+                            {% if prof.user.is_superuser %}
+                              <span class="badge bg-danger-subtle text-danger" style="font-size: 0.68rem;">Superuser</span>
+                            {% elif prof.user.is_staff %}
+                              <span class="badge bg-primary-subtle text-primary" style="font-size: 0.68rem;">Staff Admin</span>
+                            {% endif %}
+                          </div>
+                          <div class="small text-muted"><i class="bi bi-at"></i>{{ prof.user.username }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-3">
+                      <span class="badge rounded-pill fw-medium text-dark bg-secondary-subtle px-3 py-2" style="font-size: 0.8rem;">
+                        {{ prof.get_role_display }}
+                      </span>
+                    </td>
+                    <td class="py-3">
+                      <div class="small text-dark">{{ prof.user.email }}</div>
+                      {% if prof.phone %}<div class="small text-muted">{{ prof.phone }}</div>{% endif %}
+                    </td>
+                    <td class="py-3">
+                      {% if prof.user.is_active %}
+                        <span class="badge rounded-pill bg-success-subtle text-success px-3 py-1 fw-semibold" style="font-size: 0.78rem;">
+                          <i class="bi bi-check-circle me-1"></i>Active
+                        </span>
+                      {% else %}
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary px-3 py-1" style="font-size: 0.78rem;">
+                          Disabled
+                        </span>
+                      {% endif %}
+                    </td>
+                    <td class="py-3">
+                      <div class="small text-dark fw-medium">
+                        {% if prof.approved_by %}By @{{ prof.approved_by.username }}{% else %}System / Initial{% endif %}
+                      </div>
+                      <div class="small text-muted">{{ prof.approved_at|date:"M d, Y"|default:"-" }}</div>
+                    </td>
+                    <td class="py-3 text-end pe-4">
+                      {% if prof.user != request.user %}
+                        <form action="{% url 'core:user_reject' prof.id %}" method="post" class="d-inline" onsubmit="return confirm('Deactivate access for @{{ prof.user.username }}?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-secondary" title="Deactivate Access">
+                            <i class="bi bi-pause-circle"></i> Deactivate
+                          </button>
+                        </form>
+                      {% else %}
+                        <span class="text-muted small italic">Current User</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+
+      {% elif active_tab == 'rejected' %}
+        <!-- TAB 3: REJECTED REQUESTS TABLE -->
+        {% if rejected_profiles %}
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr class="text-uppercase text-secondary" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                  <th class="ps-4 py-3">User</th>
+                  <th class="py-3">Role Requested</th>
+                  <th class="py-3">Rejection Details</th>
+                  <th class="py-3">Submitted Date</th>
+                  <th class="py-3 text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                {% for prof in rejected_profiles %}
+                  <tr>
+                    <td class="ps-4 py-3">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-2xs" style="width: 40px; height: 40px; background: #64748b; font-size: 0.9rem;">
+                          {{ prof.user.first_name|default:prof.user.username|slice:":1"|upper }}
+                        </div>
+                        <div>
+                          <div class="fw-bold text-dark">{{ prof.user.get_full_name|default:prof.user.username }}</div>
+                          <div class="small text-muted"><i class="bi bi-at"></i>{{ prof.user.username }} &bull; {{ prof.user.email }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-3">
+                      <span class="badge rounded-pill fw-medium text-dark bg-secondary-subtle px-3 py-2" style="font-size: 0.8rem;">
+                        {{ prof.get_role_display }}
+                      </span>
+                    </td>
+                    <td class="py-3">
+                      <div class="small text-danger fw-semibold"><i class="bi bi-x-circle me-1"></i>Rejected</div>
+                      {% if prof.rejection_reason %}
+                        <div class="small text-muted" style="max-width: 280px;">{{ prof.rejection_reason }}</div>
+                      {% endif %}
+                    </td>
+                    <td class="py-3">
+                      <div class="small text-muted">{{ prof.created_at|date:"M d, Y" }}</div>
+                    </td>
+                    <td class="py-3 text-end pe-4">
+                      <div class="d-inline-flex gap-2">
+                        <form action="{% url 'core:user_approve' prof.id %}" method="post" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-success fw-medium">
+                            <i class="bi bi-arrow-counterclockwise"></i> Re-Approve
+                          </button>
+                        </form>
+                        <form action="{% url 'core:user_delete' prof.id %}" method="post" class="d-inline" onsubmit="return confirm('Permanently delete registration for @{{ prof.user.username }}?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-5 px-3">
+            <i class="bi bi-shield-check text-muted fs-1 d-block mb-2"></i>
+            <h6 class="fw-bold text-dark mb-1">No Rejected Requests</h6>
+            <p class="text-muted small mb-0">No registration requests have been rejected.</p>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

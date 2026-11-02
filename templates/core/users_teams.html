@@ -1,0 +1,1417 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Users & Teams Management | zynsolar CRM{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Custom Segmented Tab Pills */
+  .custom-tab-pills {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: inline-flex;
+  }
+  .custom-tab-pills .nav-link {
+    color: #475569;
+    font-size: 0.86rem;
+    border-radius: 6px;
+    padding: 0.42rem 1rem;
+    transition: none !important;
+    background: transparent;
+    border: none;
+  }
+  .custom-tab-pills .nav-link:hover {
+    color: #0f172a;
+    background: #f8fafc;
+  }
+  .custom-tab-pills .nav-link.active {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  }
+  .custom-tab-pills .nav-link.active .tab-badge {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: #ffffff !important;
+    border: none !important;
+  }
+  .custom-tab-pills .nav-link:not(.active) .tab-badge {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* KPI Metric Card */
+  .kpi-metric-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: none !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  }
+  .kpi-metric-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+    transform: translateY(-1px);
+  }
+  .kpi-metric-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .kpi-metric-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0.35rem 0 0.15rem 0;
+  }
+  .kpi-metric-subtext {
+    font-size: 0.74rem;
+    color: #64748b;
+  }
+
+  /* Team Card */
+  .team-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .team-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+    transform: translateY(-2px);
+  }
+
+  .team-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.65rem;
+  }
+  .team-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .team-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .badge-status-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-size: 0.70rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+  }
+  .badge-status-inactive {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-size: 0.70rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+  }
+  .status-dot-active {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #16a34a;
+  }
+  .status-dot-inactive {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #94a3b8;
+  }
+
+  .team-description {
+    font-size: 0.80rem;
+    color: #475569;
+    line-height: 1.45;
+    min-height: 38px;
+    margin-bottom: 0.85rem;
+  }
+
+  /* Leader Strip */
+  .team-leader-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    border-radius: 8px;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+  .leader-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+  }
+  .leader-role {
+    font-size: 0.64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    line-height: 1.1;
+  }
+  .leader-name {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  /* Avatar Stack & Member Chips */
+  .avatar-stack {
+    display: inline-flex;
+    align-items: center;
+  }
+  .avatar-stack-item {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #1e293b;
+    border: 2px solid #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.70rem;
+    font-weight: 700;
+    margin-left: -7px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .avatar-stack-item:first-child {
+    margin-left: 0;
+  }
+  .avatar-stack-more {
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.65rem;
+  }
+
+  .member-chip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+
+  /* Team Metrics Bar */
+  .team-metrics-bar {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+  .team-metric-col {
+    display: flex;
+    flex-direction: column;
+  }
+  .team-metric-divider {
+    width: 1px;
+    height: 24px;
+    background-color: #e2e8f0;
+  }
+  .metric-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+  .metric-value {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  /* Workspace Button */
+  .btn-team-workspace {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: 100%;
+    padding: 0.55rem 1rem;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #0f172a;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: none !important;
+  }
+  .btn-team-workspace:hover {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  }
+  .btn-team-workspace:hover .icon-arrow {
+    transform: translateX(3px);
+  }
+  .icon-arrow {
+    transition: transform 0.15s ease-in-out;
+  }
+
+  /* Specialist Picker Interactive Styling */
+  .specialist-check-item {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.12s ease-in-out;
+    border-color: #e2e8f0 !important;
+  }
+  .specialist-check-item:hover {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+  .specialist-check-item.is-selected {
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+  }
+  .specialist-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #059669;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <span class="text-secondary">Management</span>
+  <span class="text-muted opacity-50">&bull;</span>
+  <span class="text-dark fw-bold text-truncate" id="page-breadcrumb-sub">
+    {% if active_tab == 'teams' %}Teams & Operations{% else %}Users & Access{% endif %}
+  </span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Unified Top Controls: Segmented Tabs & Contextual Quick Actions (No Duplicate Banners) -->
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-3.5">
+    <!-- Segmented Tab Controls -->
+    <div class="d-flex align-items-center gap-2">
+      <ul class="nav custom-tab-pills gap-1 p-1 bg-white border rounded-3 shadow-2xs" id="userTeamTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {% if active_tab == 'users' %}active{% endif %} d-flex align-items-center gap-2 px-3.5 py-1.5 fw-semibold" 
+                  id="tab-btn-users" data-bs-toggle="pill" data-bs-target="#tab-pane-users" type="button" role="tab" 
+                  aria-controls="tab-pane-users" aria-selected="{% if active_tab == 'users' %}true{% else %}false{% endif %}"
+                  {% if active_tab == 'users' %}style="background-color: #0f172a !important; color: #ffffff !important;"{% endif %}>
+            <i class="bi bi-people-fill"></i>
+            <span>Users</span>
+            <span class="badge rounded-pill tab-badge ms-1">{{ total_users }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {% if active_tab == 'teams' %}active{% endif %} d-flex align-items-center gap-2 px-3.5 py-1.5 fw-semibold" 
+                  id="tab-btn-teams" data-bs-toggle="pill" data-bs-target="#tab-pane-teams" type="button" role="tab" 
+                  aria-controls="tab-pane-teams" aria-selected="{% if active_tab == 'teams' %}true{% else %}false{% endif %}"
+                  {% if active_tab == 'teams' %}style="background-color: #0f172a !important; color: #ffffff !important;"{% endif %}>
+            <i class="bi bi-diagram-3-fill"></i>
+            <span>Teams</span>
+            <span class="badge rounded-pill tab-badge ms-1">{{ total_teams_count }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Contextual Quick Actions -->
+    <div class="d-flex align-items-center gap-2">
+      <!-- Users Actions -->
+      <div id="users-actions-group" class="{% if active_tab != 'users' %}d-none{% endif %}">
+        <button type="button" class="btn btn-sm btn-solar-primary shadow-xs d-inline-flex align-items-center gap-1.5 fw-semibold px-3 py-1.5 rounded-2" data-bs-toggle="modal" data-bs-target="#addUserModal">
+          <i class="bi bi-person-plus-fill"></i>
+          <span>Add User</span>
+        </button>
+      </div>
+
+      <!-- Teams Actions -->
+      <div id="teams-actions-group" class="{% if active_tab != 'teams' %}d-none{% endif %} d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-solar-primary fw-semibold px-3 py-1.5 rounded-2 d-inline-flex align-items-center gap-1.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+          <i class="bi bi-plus-lg"></i>
+          <span>Create Team</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Content Panes -->
+  <div class="tab-content" id="userTeamTabContent">
+
+    <!-- ==================== TAB 1: USERS ==================== -->
+    <div class="tab-pane fade {% if active_tab == 'users' %}show active{% endif %}" id="tab-pane-users" role="tabpanel" aria-labelledby="tab-btn-users">
+      
+      <!-- Users Metric Cards (Matching Teams KPI Metric Card Theme Exactly) -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Active Accounts</span>
+              <i class="bi bi-person-check text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ active_users }}</div>
+            <div class="kpi-metric-subtext">
+              <span class="status-dot-active d-inline-block me-1"></span>{{ total_users }} total registered accounts
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Total Users</span>
+              <i class="bi bi-people text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ total_users }}</div>
+            <div class="kpi-metric-subtext">
+              System administrators &amp; staff
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Operational Teams</span>
+              <i class="bi bi-diagram-3 text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ total_teams_count }}</div>
+            <div class="kpi-metric-subtext">
+              Active field deployment units
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Staff Performance</span>
+              <i class="bi bi-graph-up text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value" style="font-size: 1.35rem; padding-top: 0.25rem; padding-bottom: 0.15rem;">
+              <a href="{% url 'reports:staff_performance' %}" class="text-decoration-none text-dark d-inline-flex align-items-center gap-1.5 hover-primary">
+                <span>Analytics</span>
+                <i class="bi bi-arrow-right text-muted" style="font-size: 1rem;"></i>
+              </a>
+            </div>
+            <div class="kpi-metric-subtext">
+              Workforce productivity reports
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Directory Section Header (Matching Teams Header) -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0 fw-bold font-heading text-dark" style="font-size: 0.95rem;">
+            Staff &amp; User Accounts
+          </h6>
+          <span class="text-muted small">&bull; Team roster &amp; role permissions</span>
+        </div>
+        <span class="text-muted small" style="font-size: 0.76rem;">Manage CRM credentials, access levels and task assignments</span>
+      </div>
+
+      <!-- Users Filter Toolbar -->
+      <div class="card-saas mb-3 p-2.5">
+        <form method="get" action="{% url 'core:user_list' %}" class="d-flex flex-wrap align-items-center gap-2">
+          <input type="hidden" name="tab" value="users">
+          <div class="flex-grow-1" style="min-width: 200px;">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" name="user_q" value="{{ current_q }}" class="form-control form-control-sm border-start-0" placeholder="Search by name, username, or email...">
+            </div>
+          </div>
+
+          <div style="min-width: 140px;">
+            <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="">All Roles</option>
+              {% for r_code, r_label in role_choices %}
+                <option value="{{ r_code }}" {% if current_role == r_code %}selected{% endif %}>{{ r_label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div style="min-width: 120px;">
+            <select name="user_status" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="">All Statuses</option>
+              <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+              <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+          </div>
+
+          {% if current_q or current_role or current_status %}
+            <a href="{% url 'core:user_list' %}?tab=users" class="btn btn-sm btn-light border text-secondary shadow-2xs" title="Clear Filters">
+              <i class="bi bi-x-circle me-1"></i>Reset
+            </a>
+          {% endif %}
+        </form>
+      </div>
+
+      <!-- Users Directory Table -->
+      <div class="card-saas">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.86rem;">
+            <thead class="bg-light text-muted fw-semibold" style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <tr>
+                <th class="ps-3.5 py-3">User</th>
+                <th class="py-3">Role</th>
+                <th class="py-3">Contact</th>
+                <th class="py-3 text-center">Status</th>
+                <th class="py-3 pe-3.5 text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td class="ps-3.5 py-3">
+                  <a href="{% url 'core:profile' %}?user_id={{ u.id }}" class="text-decoration-none d-flex align-items-center gap-2.5" title="View {{ u.get_full_name|default:u.username }}'s Profile">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #0f172a; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; flex-shrink: 0;" class="shadow-2xs">
+                      {{ u.first_name|first|default:u.username|first|upper }}
+                    </div>
+                    <div>
+                      <div class="fw-bold text-dark hover-primary" style="font-size: 0.88rem;">{{ u.get_full_name|default:u.username }}</div>
+                      <div class="text-muted" style="font-size: 0.74rem;">@{{ u.username }}</div>
+                    </div>
+                  </a>
+                </td>
+                <td class="py-3">
+                  <span class="member-chip fw-semibold">
+                    {{ u.profile.get_role_display|default:"Staff" }}
+                  </span>
+                </td>
+                <td class="py-3 text-muted small" style="font-size: 0.78rem;">
+                  <div class="d-flex align-items-center gap-1.5 text-dark">
+                    <i class="bi bi-envelope text-muted"></i>
+                    <span>{{ u.email|default:"No email" }}</span>
+                  </div>
+                  {% if u.profile.phone %}
+                    <div class="d-flex align-items-center gap-1.5 text-secondary mt-0.5">
+                      <i class="bi bi-telephone text-success"></i>
+                      <span>{{ u.profile.phone }}</span>
+                    </div>
+                  {% endif %}
+                </td>
+                <td class="py-3 text-center">
+                  {% if u.is_active %}
+                    <span class="badge-status-active">
+                      <span class="status-dot-active"></span>Active
+                    </span>
+                  {% else %}
+                    <span class="badge-status-inactive">
+                      <span class="status-dot-inactive"></span>Inactive
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="py-3 pe-3.5 text-end">
+                  <div class="d-flex align-items-center justify-content-end gap-1.5">
+                    <a href="{% url 'core:profile' %}?user_id={{ u.id }}" 
+                       class="btn btn-sm btn-light border text-primary rounded-pill px-2.5 py-1 fw-semibold shadow-2xs d-inline-flex align-items-center gap-1" 
+                       style="font-size: 0.74rem;" 
+                       title="View Profile">
+                      <i class="bi bi-person-circle"></i>
+                      <span>Profile</span>
+                    </a>
+                    {% if u != request.user %}
+                      <form action="{% url 'core:user_toggle_active' u.pk %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% if u.is_active %}
+                          <button type="submit" class="btn btn-sm btn-light border text-danger rounded-pill px-2.5 py-1 fw-semibold shadow-2xs" title="Deactivate Account" style="font-size: 0.74rem;">
+                            Deactivate
+                          </button>
+                        {% else %}
+                          <button type="submit" class="btn btn-sm btn-light border text-success rounded-pill px-2.5 py-1 fw-semibold shadow-2xs" title="Activate Account" style="font-size: 0.74rem;">
+                            Activate
+                          </button>
+                        {% endif %}
+                      </form>
+                    {% else %}
+                      <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1" style="font-size: 0.72rem;">Current User</span>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-4 text-muted">No users matched your query.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: TEAMS ==================== -->
+    <div class="tab-pane fade {% if active_tab == 'teams' %}show active{% endif %}" id="tab-pane-teams" role="tabpanel" aria-labelledby="tab-btn-teams">
+      
+      <!-- High-Level Team KPI Metric Ribbon -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Active Teams</span>
+              <i class="bi bi-shield-check text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ active_teams_count }}</div>
+            <div class="kpi-metric-subtext">
+              <span class="status-dot-active d-inline-block me-1"></span>{{ total_teams_count }} total operational units
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Field Workforce</span>
+              <i class="bi bi-people text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ total_members_count }}</div>
+            <div class="kpi-metric-subtext">
+              {{ active_members_count }} active specialists
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Projects in Progress</span>
+              <i class="bi bi-hourglass-split text-secondary" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value">{{ total_active_orders }}</div>
+            <div class="kpi-metric-subtext">
+              Active solar orders assigned
+            </div>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="kpi-metric-card">
+            <div class="kpi-metric-label">
+              <span>Total Delivered</span>
+              <i class="bi bi-lightning-charge text-success" style="font-size: 0.95rem;"></i>
+            </div>
+            <div class="kpi-metric-value text-success">
+              {{ total_kw_delivered|floatformat:1 }} <span style="font-size: 0.95rem; font-weight: 600;">kW</span>
+            </div>
+            <div class="kpi-metric-subtext text-success-emphasis">
+              Commissioned rooftop solar
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Operational Teams Section Header -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center gap-2">
+          <h6 class="mb-0 fw-bold font-heading text-dark" style="font-size: 0.95rem;">
+            Operational Deployment Teams
+          </h6>
+          <span class="text-muted small">&bull; Specialized field crews</span>
+        </div>
+        <span class="text-muted small" style="font-size: 0.76rem;">Select any team to access assigned projects & crew workspace</span>
+      </div>
+
+      <!-- Operational Teams Grid -->
+      <div class="row g-3.5 mb-4">
+        {% for item in teams_with_forms %}
+        {% with t=item.team edit_form=item.edit_form %}
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="team-card">
+            <div>
+              <!-- Team Header -->
+              <div class="team-card-header">
+                <div class="team-title-wrap">
+                  <h5 class="team-name">Team {{ t.name }}</h5>
+                  {% if t.is_active %}
+                    <span class="badge-status-active">
+                      <span class="status-dot-active"></span>Active
+                    </span>
+                  {% else %}
+                    <span class="badge-status-inactive">
+                      <span class="status-dot-inactive"></span>Inactive
+                    </span>
+                  {% endif %}
+                </div>
+
+                <!-- Card Quick Action Dropdown -->
+                <div class="dropdown">
+                  <button class="btn btn-xs btn-light border py-1 px-1.5 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Team Options">
+                    <i class="bi bi-three-dots-vertical"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-md border-0 rounded-3 p-1.5" style="font-size: 0.82rem; min-width: 170px;">
+                    <li>
+                      <a class="dropdown-item rounded-2 py-1.5" href="{% url 'core:team_operational_detail' t.pk %}">
+                        <i class="bi bi-layout-text-window-reverse me-2 text-primary"></i>View Workspace
+                      </a>
+                    </li>
+                    <li>
+                      <button type="button" class="dropdown-item rounded-2 py-1.5" data-bs-toggle="modal" data-bs-target="#editTeamModal-{{ t.pk }}">
+                        <i class="bi bi-pencil me-2 text-secondary"></i>Edit Team
+                      </button>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                      <button type="button" class="dropdown-item rounded-2 py-1.5 text-danger" data-bs-toggle="modal" data-bs-target="#deleteTeamModal-{{ t.pk }}">
+                        <i class="bi bi-trash3 me-2"></i>Delete Team
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Team Description -->
+              <p class="team-description">
+                {{ t.description|default:"Specialized solar installation & commissioning operations unit."|truncatewords:16 }}
+              </p>
+
+              <!-- Team Leader Strip -->
+              <div class="team-leader-strip">
+                {% if t.leader %}
+                  <div class="leader-avatar">{{ t.leader.first_name|first|default:t.leader.username|first|upper }}</div>
+                  <div class="overflow-hidden">
+                    <div class="leader-role">Team Leader</div>
+                    <div class="leader-name">{{ t.leader.get_full_name|default:t.leader.username }}</div>
+                  </div>
+                {% else %}
+                  <div class="leader-avatar" style="background:#e2e8f0; color:#64748b;"><i class="bi bi-person-x"></i></div>
+                  <div>
+                    <div class="leader-role">Team Leader</div>
+                    <div class="leader-name text-muted fst-italic" style="font-size: 0.78rem;">Unassigned</div>
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Specialists List & Avatars -->
+              <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1.5">
+                  <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    Crew Specialists ({{ t.members.count }})
+                  </span>
+                  <a href="#" class="small text-decoration-none" data-bs-toggle="modal" data-bs-target="#editTeamModal-{{ t.pk }}" style="font-size: 0.74rem;">
+                    Manage
+                  </a>
+                </div>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div class="avatar-stack">
+                    {% for m in t.members.all|slice:":4" %}
+                      <div class="avatar-stack-item" title="{{ m.first_name|default:m.username }}">
+                        {{ m.first_name|first|default:m.username|first|upper }}
+                      </div>
+                    {% endfor %}
+                    {% if t.members.count > 4 %}
+                      <div class="avatar-stack-item avatar-stack-more">+{{ t.members.count|add:"-4" }}</div>
+                    {% endif %}
+                    {% if t.members.count == 0 %}
+                      <span class="text-muted small fst-italic" style="font-size: 0.74rem;">No crew members yet</span>
+                    {% endif %}
+                  </div>
+                  <div class="text-end">
+                    <span class="text-secondary small fw-medium" style="font-size: 0.75rem;">
+                      {{ t.members.count }} specialists active
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Preview list of specialist chips -->
+                {% if t.members.all %}
+                <div class="d-flex flex-wrap gap-1 mt-2">
+                  {% for m in t.members.all|slice:":3" %}
+                    <span class="member-chip">{{ m.get_full_name|default:m.username }}</span>
+                  {% endfor %}
+                  {% if t.members.count > 3 %}
+                    <span class="member-chip text-muted">+{{ t.members.count|add:"-3" }} more</span>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Card Bottom Metrics -->
+            <div>
+              <div class="team-metrics-bar">
+                <div class="team-metric-col">
+                  <span class="metric-label">Active</span>
+                  <span class="metric-value text-primary">{{ t.active_orders_count }}</span>
+                </div>
+                <div class="team-metric-divider"></div>
+                <div class="team-metric-col">
+                  <span class="metric-label">Assigned</span>
+                  <span class="metric-value text-dark">{{ t.all_orders_count }}</span>
+                </div>
+                <div class="team-metric-divider"></div>
+                <div class="team-metric-col">
+                  <span class="metric-label">Delivered</span>
+                  <span class="metric-value text-success">{{ t.total_kw_installed|floatformat:1 }} <small class="fw-normal text-muted" style="font-size:0.62rem;">kW</small></span>
+                </div>
+              </div>
+
+              <!-- Main Card Action Button -->
+              <a href="{% url 'core:team_operational_detail' t.pk %}" class="btn-team-workspace">
+                <span>View Team Workspace</span>
+                <i class="bi bi-arrow-right icon-arrow"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div class="col-12">
+          <div class="card-saas p-4 text-center text-muted bg-white">
+            <i class="bi bi-people display-6 text-muted mb-2 opacity-50"></i>
+            <h6 class="fw-bold text-dark">No Operational Teams Created Yet</h6>
+            <p class="small mb-3">Group your field workforce, engineers, and specialists into specialized execution crews.</p>
+            <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#createTeamModal">
+              <i class="bi bi-plus-lg me-1"></i>Create First Team
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Staff & Field Personnel Roster Section -->
+      <div class="card-saas bg-white rounded-3 border">
+        <div class="p-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <h6 class="mb-0 fw-bold font-heading text-dark" style="font-size: 0.95rem;">Staff & Field Personnel Roster</h6>
+            <p class="text-muted small mb-0 mt-0.5">Directory of individual specialists, engineers, and field technicians.</p>
+          </div>
+
+          <!-- Search & Filters -->
+          <form method="get" action="{% url 'core:team_list' %}" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="tab" value="teams">
+            <div class="input-group input-group-sm" style="width: 220px;">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" name="team_q" value="{{ search_query }}" class="form-control form-control-sm border-start-0" placeholder="Search staff...">
+            </div>
+            <select name="team_status" class="form-select form-select-sm" style="width: 120px;" onchange="this.form.submit()">
+              <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>All Status</option>
+              <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+              <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Inactive</option>
+            </select>
+            {% if search_query or status_filter != 'ALL' %}
+              <a href="{% url 'core:team_list' %}?tab=teams" class="btn btn-sm btn-light border text-secondary" title="Reset">
+                <i class="bi bi-x-circle"></i>
+              </a>
+            {% endif %}
+          </form>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.86rem;">
+            <thead class="bg-light text-muted fw-semibold" style="font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <tr>
+                <th class="ps-3 py-2.5">Staff Member</th>
+                <th class="py-2.5">Designation</th>
+                <th class="py-2.5">Contact</th>
+                <th class="py-2.5 text-center">Assigned Projects</th>
+                <th class="py-2.5 text-center">Capacity</th>
+                <th class="py-2.5 text-center">Status</th>
+                <th class="py-2.5 pe-3 text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in members %}
+              <tr>
+                <td class="ps-3 py-2.5">
+                  <div class="d-flex align-items-center gap-2">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: #0f172a; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem;">
+                      {{ m.name|first|upper }}
+                    </div>
+                    <div>
+                      <a href="{% url 'core:team_detail' m.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                        {{ m.name }}
+                      </a>
+                      {% if m.user %}
+                        <span class="text-muted ms-1" style="font-size: 0.72rem;">(@{{ m.user.username }})</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td class="py-2.5 text-secondary">{{ m.designation|default:"Field Operations" }}</td>
+                <td class="py-2.5 text-muted small" style="font-size: 0.78rem;">
+                  <div>{{ m.phone|default:"-" }}</div>
+                  <div>{{ m.email|default:"-" }}</div>
+                </td>
+                <td class="py-2.5 text-center fw-semibold text-primary">
+                  {{ m.perf.overview.total_projects }}
+                </td>
+                <td class="py-2.5 text-center fw-semibold text-dark">{{ m.perf.overview.total_kw|floatformat:1 }} kW</td>
+                <td class="py-2.5 text-center">
+                  {% if m.is_active %}
+                    <span class="badge-status-active">
+                      <span class="status-dot-active"></span>Active
+                    </span>
+                  {% else %}
+                    <span class="badge-status-inactive">
+                      <span class="status-dot-inactive"></span>Inactive
+                    </span>
+                  {% endif %}
+                </td>
+                <td class="py-2.5 pe-3 text-end">
+                  <div class="d-flex align-items-center justify-content-end gap-1.5">
+                    <a href="{% url 'core:team_detail' m.pk %}" class="btn btn-xs btn-light border p-1 text-secondary" title="View Work Profile">
+                      <i class="bi bi-person-workspace"></i>
+                    </a>
+                    <button type="button" class="btn btn-xs btn-light border p-1 text-secondary" data-bs-toggle="modal" data-bs-target="#editMemberModal-{{ m.pk }}" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Modal: Edit Staff Member -->
+              <div class="modal fade" id="editMemberModal-{{ m.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                  <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+                    <div class="modal-header py-3 px-3.5 border-bottom bg-light">
+                      <h6 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square text-primary me-1.5"></i>Edit Staff Member: {{ m.name }}</h6>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="{% url 'core:team_update' m.pk %}" method="post">
+                      {% csrf_token %}
+                      <div class="modal-body p-3.5">
+                        <div class="mb-3">
+                          <label class="form-label small fw-semibold text-secondary mb-1">Full Name *</label>
+                          <input type="text" name="name" value="{{ m.name }}" required class="form-control">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label small fw-semibold text-secondary mb-1">Designation</label>
+                          <input type="text" name="designation" value="{{ m.designation }}" class="form-control">
+                        </div>
+                        <div class="row g-2 mb-3">
+                          <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Phone</label>
+                            <input type="text" name="phone" value="{{ m.phone }}" class="form-control" maxlength="10" inputmode="numeric" data-country-phone="true">
+                          </div>
+                          <div class="col-6">
+                            <label class="form-label small fw-semibold text-secondary mb-1">Email</label>
+                            <input type="email" name="email" value="{{ m.email }}" class="form-control">
+                          </div>
+                        </div>
+                        <div class="form-check form-switch mt-2">
+                          <input type="checkbox" name="is_active" class="form-check-input" id="edit_active_{{ m.pk }}" {% if m.is_active %}checked{% endif %}>
+                          <label class="form-check-label small fw-semibold text-dark" for="edit_active_{{ m.pk }}">Active status</label>
+                        </div>
+                      </div>
+                      <div class="modal-footer py-2.5 px-3.5 border-top bg-light">
+                        <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold px-3">Update Member</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">No staff members matched your query.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== ALL MODALS ==================== -->
+
+<!-- Modal: Add System User -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <div class="modal-header py-2.5 px-3 border-bottom">
+        <h6 class="modal-title fw-bold" id="addUserModalLabel">Create New System User</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'core:user_create' %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-3">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold mb-1">First Name *</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold mb-1">Last Name</label>
+              {{ form.last_name }}
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Username *</label>
+            {{ form.username }}
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Email Address *</label>
+            {{ form.email }}
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold mb-1">Phone Number</label>
+              <div class="input-group">
+                {{ form.phone }}
+              </div>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold mb-1">Assigned Role *</label>
+              {{ form.role }}
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label small fw-semibold mb-1">Initial Password *</label>
+            {{ form.password }}
+          </div>
+        </div>
+        <div class="modal-footer py-2 px-3 border-top bg-light">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Operational Team -->
+<div class="modal fade" id="createTeamModal" tabindex="-1" aria-labelledby="createTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+      <div class="modal-header py-3 px-3.5 border-bottom bg-light">
+        <div class="d-flex align-items-center gap-2">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="bi bi-plus-circle-fill"></i>
+          </div>
+          <div>
+            <h6 class="modal-title fw-bold font-heading text-dark mb-0" id="createTeamModalLabel">
+              Create New Operational Team
+            </h6>
+            <span class="text-muted small" style="font-size: 0.76rem;">Assemble specialized crews for field execution & solar installation</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form action="{% url 'core:team_create_operational' %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-3.5">
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold text-secondary mb-1">Team Name *</label>
+              {{ team_create_form.name }}
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold text-secondary mb-1">Team Leader</label>
+              {{ team_create_form.leader }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Mission & Scope Description</label>
+            {{ team_create_form.description }}
+          </div>
+
+          <div class="form-check form-switch mb-3.5">
+            {{ team_create_form.is_active }}
+            <label class="form-check-label small fw-semibold text-dark" for="{{ team_create_form.is_active.id_for_label }}">
+              Active operational team
+            </label>
+          </div>
+
+          <!-- Specialist Roster Assignment Picker -->
+          <div class="border rounded-3 p-3 bg-light-subtle">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <label class="form-label small fw-bold text-dark mb-0">Assign Crew Specialists</label>
+                <div class="text-muted small" style="font-size: 0.74rem;">Select staff members to deploy in this crew unit</div>
+              </div>
+              <span class="badge bg-secondary-subtle text-secondary" id="createTeamSelectedCounter" style="font-size: 0.72rem;">
+                0 selected
+              </span>
+            </div>
+
+            <!-- Fast search inside modal -->
+            <div class="input-group input-group-sm mb-2.5">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control border-start-0 specialist-filter-input" placeholder="Filter specialists by name or role..." data-target-list="createSpecialistsList">
+            </div>
+
+            <!-- Specialist checkboxes grid -->
+            <div class="specialist-picker-list" id="createSpecialistsList" style="max-height: 220px; overflow-y: auto;">
+              <div class="row g-2">
+                {% for u in all_staff_users %}
+                <div class="col-12 col-md-6">
+                  <label class="specialist-check-item d-flex align-items-center gap-2 p-2 rounded-2 border bg-white mb-0" style="cursor: pointer;">
+                    <input type="checkbox" name="members" value="{{ u.pk }}" class="form-check-input m-0 specialist-checkbox" onchange="updateSpecialistSelection(this, 'createTeamSelectedCounter')">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.74rem; flex-shrink: 0;">
+                      {{ u.first_name|first|default:u.username|first|upper }}
+                    </div>
+                    <div class="text-truncate" style="font-size: 0.80rem;">
+                      <div class="fw-semibold text-dark text-truncate">{{ u.get_full_name|default:u.username }}</div>
+                      <div class="text-muted text-truncate" style="font-size: 0.70rem;">{{ u.profile.get_role_display|default:"Staff" }}</div>
+                    </div>
+                  </label>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-3 text-muted small">
+                  No staff accounts available for assignment.
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer py-2.5 px-3.5 border-top bg-light">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold px-3">
+            <i class="bi bi-check2 me-1"></i>Create Operational Team
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit and Delete Modals for Each Team -->
+{% for item in teams_with_forms %}
+{% with t=item.team edit_form=item.edit_form %}
+<div class="modal fade" id="editTeamModal-{{ t.pk }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+      <div class="modal-header py-3 px-3.5 border-bottom bg-light">
+        <div class="d-flex align-items-center gap-2">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+            <i class="bi bi-pencil-fill"></i>
+          </div>
+          <div>
+            <h6 class="modal-title fw-bold font-heading text-dark mb-0">Edit Team: {{ t.name }}</h6>
+            <span class="text-muted small" style="font-size: 0.76rem;">Update team configuration, leadership, and specialist assignments</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form action="{% url 'core:team_update_operational' t.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-3.5">
+          <div class="row g-3 mb-3">
+            <div class="col-md-7">
+              <label class="form-label small fw-semibold text-secondary mb-1">Team Name *</label>
+              {{ edit_form.name }}
+            </div>
+            <div class="col-md-5">
+              <label class="form-label small fw-semibold text-secondary mb-1">Team Leader</label>
+              {{ edit_form.leader }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Mission & Scope Description</label>
+            {{ edit_form.description }}
+          </div>
+
+          <div class="form-check form-switch mb-3.5">
+            {{ edit_form.is_active }}
+            <label class="form-check-label small fw-semibold text-dark" for="{{ edit_form.is_active.id_for_label }}">
+              Active operational team
+            </label>
+          </div>
+
+          <!-- Specialist Roster Assignment Picker -->
+          <div class="border rounded-3 p-3 bg-light-subtle">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div>
+                <label class="form-label small fw-bold text-dark mb-0">Crew Specialists Roster</label>
+                <div class="text-muted small" style="font-size: 0.74rem;">Add or remove assigned specialists for this crew</div>
+              </div>
+              <span class="badge bg-secondary-subtle text-secondary" id="editTeamCounter-{{ t.pk }}" style="font-size: 0.72rem;">
+                {{ t.members.count }} assigned
+              </span>
+            </div>
+
+            <!-- Filter input -->
+            <div class="input-group input-group-sm mb-2.5">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control border-start-0 specialist-filter-input" placeholder="Filter specialists..." data-target-list="editSpecialistsList-{{ t.pk }}">
+            </div>
+
+            <!-- Specialist checkboxes grid -->
+            <div class="specialist-picker-list" id="editSpecialistsList-{{ t.pk }}" style="max-height: 220px; overflow-y: auto;">
+              <div class="row g-2">
+                {% for u in all_staff_users %}
+                <div class="col-12 col-md-6">
+                  <label class="specialist-check-item d-flex align-items-center gap-2 p-2 rounded-2 border bg-white mb-0 {% if u in t.members.all %}is-selected{% endif %}" style="cursor: pointer;">
+                    <input type="checkbox" name="members" value="{{ u.pk }}" class="form-check-input m-0 specialist-checkbox" {% if u in t.members.all %}checked{% endif %} onchange="updateSpecialistSelection(this, 'editTeamCounter-{{ t.pk }}')">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.74rem; flex-shrink: 0;">
+                      {{ u.first_name|first|default:u.username|first|upper }}
+                    </div>
+                    <div class="text-truncate" style="font-size: 0.80rem;">
+                      <div class="fw-semibold text-dark text-truncate">{{ u.get_full_name|default:u.username }}</div>
+                      <div class="text-muted text-truncate" style="font-size: 0.70rem;">{{ u.profile.get_role_display|default:"Staff" }}</div>
+                    </div>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer py-2.5 px-3.5 border-top bg-light">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold px-3">
+            <i class="bi bi-check2 me-1"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Delete Team -->
+<div class="modal fade" id="deleteTeamModal-{{ t.pk }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+      <div class="modal-header py-3 px-3.5 border-bottom bg-danger-subtle text-danger">
+        <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle-fill me-1.5"></i>Delete Team: {{ t.name }}</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{% url 'core:team_delete_operational' t.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-3.5">
+          <p class="mb-2 text-dark">Are you sure you want to delete <strong>Team {{ t.name }}</strong>?</p>
+          <p class="small text-muted mb-0">Assigned crew members will not be deleted from the system, but team workspace groupings will be dismantled.</p>
+        </div>
+        <div class="modal-footer py-2.5 px-3.5 border-top bg-light">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-danger fw-semibold px-3">Delete Team</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endwith %}
+{% endfor %}
+
+<!-- Modal: Add Staff Member -->
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0 rounded-3 overflow-hidden">
+      <div class="modal-header py-3 px-3.5 border-bottom bg-light">
+        <h6 class="modal-title fw-bold text-dark"><i class="bi bi-person-plus-fill text-primary me-1.5"></i>Add Staff Member</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{% url 'core:team_create' %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-3.5">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Full Name *</label>
+            <input type="text" name="name" required class="form-control" placeholder="e.g. Rahul Sharma">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary mb-1">Designation</label>
+            <input type="text" name="designation" class="form-control" placeholder="e.g. Lead Installation Engineer">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-secondary mb-1">Phone</label>
+              <input type="text" name="phone" class="form-control" placeholder="10-digit phone number" maxlength="10" inputmode="numeric" data-country-phone="true">
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-secondary mb-1">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="member@company.com">
+            </div>
+          </div>
+          <div class="form-check form-switch mt-2">
+            <input type="checkbox" name="is_active" class="form-check-input" checked id="add_is_active">
+            <label class="form-check-label small fw-semibold text-dark" for="add_is_active">Active status</label>
+          </div>
+        </div>
+        <div class="modal-footer py-2.5 px-3.5 border-top bg-light">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary fw-semibold px-3">Save Member</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Scoped Custom Styling: Bespoke High-End SaaS -->
+
+<!-- Specialist Selection & Tab Switching Script -->
+<script>
+  function updateSpecialistSelection(checkbox, counterId) {
+    const card = checkbox.closest('.specialist-check-item');
+    if (!card) return;
+    if (checkbox.checked) {
+      card.classList.add('is-selected');
+    } else {
+      card.classList.remove('is-selected');
+    }
+    
+    // Update counter
+    const list = card.closest('.specialist-picker-list');
+    if (list && counterId) {
+      const totalChecked = list.querySelectorAll('input[type="checkbox"]:checked').length;
+      const counterBadge = document.getElementById(counterId);
+      if (counterBadge) {
+        counterBadge.textContent = `${totalChecked} assigned`;
+      }
+    }
+  }
+
+  // Real-time filter in search input for specialists
+  document.addEventListener('input', function(e) {
+    if (e.target && e.target.classList.contains('specialist-filter-input')) {
+      const query = e.target.value.toLowerCase().trim();
+      const targetListId = e.target.getAttribute('data-target-list');
+      const list = document.getElementById(targetListId);
+      if (!list) return;
+
+      const items = list.querySelectorAll('.specialist-check-item');
+      items.forEach(function(item) {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(query)) {
+          item.closest('.col-12').style.setProperty('display', 'block', 'important');
+        } else {
+          item.closest('.col-12').style.setProperty('display', 'none', 'important');
+        }
+      });
+    }
+  });
+
+  // Tab switching coordination
+  document.addEventListener('DOMContentLoaded', function() {
+    const usersTabBtn = document.getElementById('tab-btn-users');
+    const teamsTabBtn = document.getElementById('tab-btn-teams');
+    const usersActions = document.getElementById('users-actions-group');
+    const teamsActions = document.getElementById('teams-actions-group');
+    const breadcrumbSub = document.getElementById('page-breadcrumb-sub');
+
+    function syncTabState(tabName) {
+      const sidebarTeams = document.getElementById('sidebar-nav-teams');
+      const sidebarUsers = document.getElementById('sidebar-nav-users');
+      if (tabName === 'teams') {
+        if (usersActions) usersActions.classList.add('d-none');
+        if (teamsActions) teamsActions.classList.remove('d-none');
+        if (breadcrumbSub) breadcrumbSub.textContent = 'Teams & Operations';
+        if (sidebarTeams) sidebarTeams.classList.add('active');
+        if (sidebarUsers) sidebarUsers.classList.remove('active');
+      } else {
+        if (teamsActions) teamsActions.classList.add('d-none');
+        if (usersActions) usersActions.classList.remove('d-none');
+        if (breadcrumbSub) breadcrumbSub.textContent = 'Users & Access';
+        if (sidebarUsers) sidebarUsers.classList.add('active');
+        if (sidebarTeams) sidebarTeams.classList.remove('active');
+      }
+
+      // Update URL query string without reloading page
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('tab', tabName);
+      window.history.replaceState({}, '', currentUrl.toString());
+    }
+
+    if (usersTabBtn) {
+      usersTabBtn.addEventListener('shown.bs.tab', function() {
+        usersTabBtn.style.setProperty('background-color', '#0f172a', 'important');
+        usersTabBtn.style.setProperty('color', '#ffffff', 'important');
+        if (teamsTabBtn) {
+          teamsTabBtn.style.removeProperty('background-color');
+          teamsTabBtn.style.removeProperty('color');
+        }
+        syncTabState('users');
+      });
+    }
+
+    if (teamsTabBtn) {
+      teamsTabBtn.addEventListener('shown.bs.tab', function() {
+        teamsTabBtn.style.setProperty('background-color', '#0f172a', 'important');
+        teamsTabBtn.style.setProperty('color', '#ffffff', 'important');
+        if (usersTabBtn) {
+          usersTabBtn.style.removeProperty('background-color');
+          usersTabBtn.style.removeProperty('color');
+        }
+        syncTabState('teams');
+      });
+    }
+
+    // Only switch tabs via JS if requested tab is different from initial server-rendered tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+    if ((urlParams.get('tab') === 'teams' || hash === '#teams') && teamsTabBtn && !teamsTabBtn.classList.contains('active')) {
+      const tabTrigger = new bootstrap.Tab(teamsTabBtn);
+      tabTrigger.show();
+    } else if ((urlParams.get('tab') === 'users' || hash === '#users') && usersTabBtn && !usersTabBtn.classList.contains('active')) {
+      const tabTrigger = new bootstrap.Tab(usersTabBtn);
+      tabTrigger.show();
+    }
+  });
+</script>
+{% endblock %}

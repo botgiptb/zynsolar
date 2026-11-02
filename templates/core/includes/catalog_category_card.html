@@ -1,0 +1,120 @@
+<div class="card border-0 shadow-sm rounded-3 bg-white mb-4">
+  <div class="card-header border-bottom p-3 p-md-4 bg-white d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="rounded-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: #ecfdf5; color: #059669; font-size: 0.95rem;">
+          <i class="bi {{ icon }}"></i>
+        </span>
+        <h5 class="mb-0 fw-bold text-dark">{{ category_title }}</h5>
+      </div>
+      <p class="text-muted small mb-0 mt-1">{{ category_desc }}</p>
+    </div>
+    <span class="badge bg-light text-dark border px-2.5 py-1.5" style="font-size: 0.75rem;">
+      {{ items|length }} Configured Options
+    </span>
+  </div>
+
+  <div class="card-body p-3 p-md-4">
+    <!-- Add New Item Form -->
+    <div class="p-3 rounded-3 mb-4 border" style="background: #f0fdf4; border-color: #bbf7d0 !important;">
+      <h6 class="fw-bold text-dark small text-uppercase mb-2" style="font-size: 0.74rem; letter-spacing: 0.03em;">
+        <i class="bi bi-plus-circle-fill text-success me-1"></i> Add New {{ category_title|slice:":-1"|default:category_title }}
+      </h6>
+      <form method="post" class="row g-2 align-items-center">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_catalog_item">
+        <input type="hidden" name="category" value="{{ category_code }}">
+        <input type="hidden" name="active_tab" value="catalog">
+
+        <div class="col-md-6 col-12">
+          <input type="text" name="name" class="form-control form-control-sm" placeholder="{{ placeholder }}" required>
+        </div>
+        <div class="col-md-4 col-12">
+          <input type="text" name="description" class="form-control form-control-sm" placeholder="Optional notes (e.g. 21.5% efficiency)">
+        </div>
+        <div class="col-md-2 col-12">
+          <button type="submit" class="btn btn-solar-primary btn-sm w-100 fw-semibold">
+            <i class="bi bi-plus-lg me-1"></i> Add
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Existing Items List -->
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light text-secondary small text-uppercase" style="font-size: 0.7rem;">
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th>Specification / Name</th>
+            <th>Notes / Description</th>
+            <th style="width: 110px;">Status</th>
+            <th style="width: 140px;" class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr class="{% if not item.is_active %}opacity-75 bg-light{% endif %}">
+              <td class="text-muted small font-monospace">{{ forloop.counter }}</td>
+              <td>
+                <div class="fw-semibold text-dark {% if not item.is_active %}text-decoration-line-through text-muted{% endif %}" style="font-size: 0.88rem;">
+                  {{ item.name }}
+                </div>
+              </td>
+              <td class="text-muted small">
+                {{ item.description|default:"&mdash;" }}
+              </td>
+              <td>
+                {% if item.is_active %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill" style="font-size: 0.68rem; font-weight: 600;">
+                    <i class="bi bi-check-circle-fill me-0.5"></i> Active
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary border px-2 py-1 rounded-pill" style="font-size: 0.68rem; font-weight: 500;">
+                    Inactive
+                  </span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div class="d-inline-flex align-items-center gap-1">
+                  <!-- Toggle Active Form -->
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="toggle_catalog_item">
+                    <input type="hidden" name="item_id" value="{{ item.pk }}">
+                    <input type="hidden" name="cat" value="{{ category_code }}">
+                    <button type="submit" class="btn btn-sm btn-light border py-1 px-2" title="{% if item.is_active %}Deactivate{% else %}Activate{% endif %}" style="font-size: 0.75rem;">
+                      {% if item.is_active %}
+                        <i class="bi bi-eye-slash text-muted"></i>
+                      {% else %}
+                        <i class="bi bi-eye text-success"></i>
+                      {% endif %}
+                    </button>
+                  </form>
+
+                  <!-- Delete Item Form -->
+                  <form method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove &quot;{{ item.name }}&quot; from the catalog?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete_catalog_item">
+                    <input type="hidden" name="item_id" value="{{ item.pk }}">
+                    <input type="hidden" name="cat" value="{{ category_code }}">
+                    <button type="submit" class="btn btn-sm btn-light border text-danger py-1 px-2" title="Delete Option" style="font-size: 0.75rem;">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-4 text-muted small">
+                <i class="bi bi-inbox fs-4 d-block mb-1 text-secondary opacity-50"></i>
+                No options configured in this category yet. Add your first item above!
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

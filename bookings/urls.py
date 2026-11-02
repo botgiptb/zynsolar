@@ -1,0 +1,46 @@
+from django.urls import path
+from . import views
+
+app_name = 'bookings'
+
+urlpatterns = [
+    path('', views.BookingListView.as_view(), name='list'),
+    path('tasks/', views.TaskListView.as_view(), name='task_list'),
+    path('calendar/', views.CalendarView.as_view(), name='calendar'),
+    path('calendar/events/', views.CalendarEventsJsonView.as_view(), name='calendar_events_json'),
+    path('calendar/move-event/', views.CalendarEventMoveView.as_view(), name='calendar_event_move'),
+
+    path('tasks/<int:pk>/', views.TaskDetailJsonView.as_view(), name='task_detail'),
+    path('tasks/<int:pk>/detail-json/', views.TaskDetailJsonView.as_view(), name='task_detail_json'),
+    path('tasks/create/', views.TaskCreateView.as_view(), name='task_create'),
+    path('tasks/<int:pk>/toggle/', views.TaskToggleView.as_view(), name='task_toggle'),
+    path('tasks/<int:pk>/status/', views.TaskStatusUpdateView.as_view(), name='task_status_update'),
+    path('tasks/<int:pk>/delete/', views.TaskDeleteView.as_view(), name='task_delete'),
+    path('tasks/checklist/<int:pk>/toggle/', views.TaskChecklistToggleView.as_view(), name='checklist_toggle'),
+    path('tasks/<int:task_id>/checklist/add/', views.TaskChecklistAddItemView.as_view(), name='checklist_add'),
+    path('tasks/checklist/<int:pk>/delete/', views.TaskChecklistDeleteItemView.as_view(), name='checklist_delete'),
+    path('credit-management/', views.CreditManagementView.as_view(), name='credit_management'),
+    path('pipeline/stage/quick-create/', views.QuickStageCreateView.as_view(), name='quick_stage_create'),
+    path('pipeline/reorder/', views.ReorderBookingsView.as_view(), name='reorder_bookings'),
+    path('<int:pk>/priority/', views.UpdateBookingPriorityView.as_view(), name='update_priority'),
+    path('create/', views.BookingCreateView.as_view(), name='create'),
+    path('payments/<int:payment_id>/receipt/', views.PaymentReceiptPrintView.as_view(), name='payment_receipt'),
+    path('<int:pk>/', views.BookingDetailView.as_view(), name='detail'),
+    path('<int:pk>/edit/', views.BookingUpdateView.as_view(), name='edit'),
+    path('<int:pk>/advance/', views.BookingAdvanceStageView.as_view(), name='advance_stage'),
+    path('<int:pk>/cancel/', views.BookingCancelView.as_view(), name='cancel'),
+    path('<int:pk>/reopen/', views.BookingReopenView.as_view(), name='reopen'),
+    path('<int:pk>/hold/', views.BookingHoldView.as_view(), name='hold'),
+    path('<int:pk>/resume-hold/', views.BookingResumeHoldView.as_view(), name='resume_hold'),
+    path('<int:pk>/update-progress/', views.BookingUpdateProgressView.as_view(), name='update_progress'),
+    path('<int:pk>/payments/record/', views.RecordPaymentView.as_view(), name='record_payment'),
+    path('<int:pk>/attachments/upload/', views.BookingAttachmentUploadView.as_view(), name='attachment_upload'),
+    path('<int:pk>/attachments/<int:attachment_pk>/delete/', views.BookingAttachmentDeleteView.as_view(), name='attachment_delete'),
+    path('<int:pk>/notes/add/', views.BookingAddNoteView.as_view(), name='add_note'),
+    path('<int:pk>/notes/<int:note_id>/delete/', views.BookingDeleteNoteView.as_view(), name='delete_note'),
+    path('<int:pk>/notes/update-primary/', views.BookingUpdatePrimaryNotesView.as_view(), name='update_primary_notes'),
+    path('<int:pk>/custom-fields/add/', views.BookingCustomFieldCreateView.as_view(), name='custom_field_add'),
+    path('<int:pk>/custom-fields/<int:field_pk>/edit/', views.BookingCustomFieldUpdateView.as_view(), name='custom_field_edit'),
+    path('<int:pk>/custom-fields/<int:field_pk>/update/', views.BookingCustomFieldUpdateView.as_view(), name='custom_field_update'),
+    path('<int:pk>/custom-fields/<int:field_pk>/delete/', views.BookingCustomFieldDeleteView.as_view(), name='custom_field_delete'),
+]

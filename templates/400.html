@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}400 - Bad Request | Solar CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-xl-4 py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-sm rounded-4 text-center p-4 p-md-5 bg-white">
+        <!-- Error Badge & Icon -->
+        <div class="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-circle" 
+             style="width: 88px; height: 88px; background: #f8fafc; border: 2px solid #e2e8f0;">
+          <i class="bi bi-patch-exclamation-fill text-secondary fs-1"></i>
+        </div>
+
+        <div class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill font-monospace mx-auto mb-3" style="font-size: 0.8rem; font-weight: 600;">
+          HTTP ERROR 400 &bull; BAD REQUEST
+        </div>
+
+        <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.02em;">Invalid Request</h3>
+        <p class="text-muted mb-4 small" style="line-height: 1.6;">
+          The request could not be processed because the server detected invalid syntax, missing parameters, or improper data encoding.
+        </p>
+
+        <!-- Helpful Navigation Actions -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 pt-2 border-top">
+          <a href="{% url 'core:dashboard' %}" class="btn btn-solar-primary px-3 py-2 fw-semibold">
+            <i class="bi bi-grid-1x2-fill me-1.5"></i> Dashboard
+          </a>
+          <a href="javascript:history.back();" class="btn btn-outline-secondary px-3 py-2 fw-medium">
+            <i class="bi bi-arrow-left me-1.5"></i> Go Back
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

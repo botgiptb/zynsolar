@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}500 - Server Error | Solar CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-xl-4 py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-sm rounded-4 text-center p-4 p-md-5 bg-white">
+        <!-- Error Badge & Icon -->
+        <div class="mx-auto mb-4 d-flex align-items-center justify-content-center rounded-circle" 
+             style="width: 88px; height: 88px; background: #fef2f2; border: 2px solid #fecaca;">
+          <i class="bi bi-exclamation-triangle-fill text-danger fs-1"></i>
+        </div>
+
+        <div class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1.5 rounded-pill font-monospace mx-auto mb-3" style="font-size: 0.8rem; font-weight: 600;">
+          HTTP ERROR 500 &bull; INTERNAL SERVER ERROR
+        </div>
+
+        <h3 class="fw-bold text-dark mb-2" style="letter-spacing: -0.02em;">Unexpected System Error</h3>
+        <p class="text-muted mb-4 small" style="line-height: 1.6;">
+          An unexpected condition occurred on the server while processing your request. An incident log has been generated and logged automatically for review.
+        </p>
+
+        <div class="alert alert-light border small text-start text-muted mb-4 py-2.5 px-3 rounded-3 font-monospace" style="font-size: 0.75rem;">
+          <i class="bi bi-info-circle me-1 text-primary"></i> If this issue persists after refreshing, please contact your system administrator with the action you were performing.
+        </div>
+
+        <!-- Helpful Navigation Actions -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 pt-2 border-top">
+          <button type="button" class="btn btn-solar-primary px-3 py-2 fw-semibold" onclick="window.location.reload();">
+            <i class="bi bi-arrow-clockwise me-1.5"></i> Reload Page
+          </button>
+          <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary px-3 py-2 fw-medium">
+            <i class="bi bi-grid-1x2-fill me-1.5"></i> Go to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

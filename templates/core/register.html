@@ -1,0 +1,145 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Register Staff Account | SolarPro CRM{% endblock %}
+{% block max_width %}680px{% endblock %}
+
+{% block auth_content %}
+<div>
+  <div class="text-center mb-4">
+    <h4 class="fw-bold mb-1" style="color: #0f172a; font-family: 'Plus Jakarta Sans', sans-serif;">Create Staff Account</h4>
+    <p class="text-muted small mb-0">Join the zynsolar workspace. Submissions require administrator approval.</p>
+  </div>
+
+  <!-- Admin Verification Notice -->
+  <div class="p-3 mb-4 rounded-3 d-flex align-items-start gap-2.5 alert alert-success border-0" style="border-radius: 12px; font-size: 0.83rem;">
+    <i class="bi bi-shield-check fs-4 flex-shrink-0 text-success"></i>
+    <div>
+      <strong class="d-block mb-0.5">Admin Approval Required</strong>
+      After submitting your details, your profile will be sent to the administrator queue. You will be able to log in after an admin accepts your registration.
+    </div>
+  </div>
+
+  <form method="post" action="{% url 'core:register' %}">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger small mb-3 border-0 d-flex align-items-center p-3" style="border-radius: 12px;">
+        <i class="bi bi-x-circle-fill fs-5 me-2 text-danger flex-shrink-0"></i>
+        <div>
+          {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="row g-3 mb-3">
+      <!-- First Name -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">First Name <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
+          {{ form.first_name }}
+        </div>
+        {% if form.first_name.errors %}
+          <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Last Name -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Last Name <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-person"></i></span>
+          {{ form.last_name }}
+        </div>
+        {% if form.last_name.errors %}
+          <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Username -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Username <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-at"></i></span>
+          {{ form.username }}
+        </div>
+        {% if form.username.errors %}
+          <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Email Address -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Company Email <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-envelope"></i></span>
+          {{ form.email }}
+        </div>
+        {% if form.email.errors %}
+          <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Phone Number -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Phone Number</label>
+        <div class="input-group">
+          {{ form.phone }}
+        </div>
+        {% if form.phone.errors %}
+          <div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Role / Department -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Role / Department <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-briefcase"></i></span>
+          {{ form.role }}
+        </div>
+        {% if form.role.errors %}
+          <div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Password -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Password <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock"></i></span>
+          {{ form.password }}
+        </div>
+        {% if form.password.errors %}
+          <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="col-sm-6">
+        <label class="form-label-custom">Confirm Password <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-lock-fill"></i></span>
+          {{ form.confirm_password }}
+        </div>
+        {% if form.confirm_password.errors %}
+          <div class="text-danger small mt-1">{{ form.confirm_password.errors.0 }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn-auth-shine mt-3">
+      <i class="bi bi-send-check-fill me-1"></i> Submit Registration for Approval
+    </button>
+  </form>
+
+  <div class="auth-footer-text">
+    <span>Already have an approved account?</span>
+    <a href="{% url 'core:login' %}">
+      Sign In Here <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+</div>
+{% endblock %}

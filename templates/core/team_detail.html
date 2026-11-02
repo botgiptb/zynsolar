@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}{{ member.name }} | Work Profile &amp; Performance | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <a href="{% url 'reports:dashboard' %}" class="text-secondary text-decoration-none">Reports &amp; BI</a>
+  <span class="text-muted opacity-50">&bull;</span>
+  <a href="{% url 'reports:staff_performance' %}" class="text-secondary text-decoration-none">Staff Directory</a>
+  <span class="text-muted opacity-50">&bull;</span>
+  <span class="text-dark fw-bold text-truncate">{{ member.name }}</span>
+  <span class="badge bg-light text-success border border-success-subtle ms-1 d-none d-sm-inline" style="font-size: 0.72rem;">Work Profile</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Executive Header Card -->
+  <div class="card-saas p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="user-avatar-circle" style="width: 60px; height: 60px; font-size: 1.5rem; background: #f0fdf4; color: #16a34a; border: 2px solid #86efac;">
+          {{ member.name|slice:":1"|upper }}
+        </div>
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h2 class="mb-0 fw-bold text-dark font-heading">{{ member.name }}</h2>
+
+            <span class="badge {{ perf.workload.badge }} px-2 py-1">
+              {{ perf.workload.label }}
+            </span>
+
+            {% if member.is_active %}
+              <span class="badge bg-success text-white px-2 py-1">Active</span>
+            {% else %}
+              <span class="badge bg-secondary text-white px-2 py-1">Inactive</span>
+            {% endif %}
+          </div>
+
+          <div class="text-muted small mt-1">
+            <strong>{{ member.designation|default:"Team Member" }}</strong> &bull;
+            Joined {{ member.joined_date|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a href="tel:{{ member.phone }}" class="btn btn-solar-outline shadow-xs">
+          <i class="bi bi-telephone-fill text-success me-1"></i> {{ member.phone }}
+        </a>
+        {% if member.email %}
+          <a href="mailto:{{ member.email }}" class="btn btn-solar-outline shadow-xs">
+            <i class="bi bi-envelope-fill text-primary me-1"></i> Email
+          </a>
+        {% endif %}
+        <button type="button" class="btn btn-solar-outline shadow-xs" data-bs-toggle="modal" data-bs-target="#editTeamModal">
+          <i class="bi bi-pencil me-1"></i> Edit Member
+        </button>
+        <form action="{% url 'core:team_toggle_active' member.pk %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-solar-outline shadow-xs">
+            {% if member.is_active %}<i class="bi bi-pause-fill text-warning me-1"></i> Deactivate{% else %}<i class="bi bi-play-fill text-success me-1"></i> Activate{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Performance Metrics Ribbon (No hardcoded status names) -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-blue h-100">
+        <div class="kpi-header">
+          <span class="kpi-title">Delivered Solar Capacity</span>
+          <div class="kpi-icon-box"><i class="bi bi-sun-fill"></i></div>
+        </div>
+        <div class="kpi-value">{{ perf.overview.total_kw|floatformat:1 }} <span class="fs-6 text-muted fw-normal">kW</span></div>
+        <div class="kpi-subtitle text-muted">Across all assigned solar projects</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-emerald h-100">
+        <div class="kpi-header">
+          <span class="kpi-title">Gross Project Volume</span>
+          <div class="kpi-icon-box"><i class="bi bi-currency-rupee"></i></div>
+        </div>
+        <div class="kpi-value text-success">₹{{ perf.overview.total_revenue|floatformat:0|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Total value of orders handled</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-amber h-100">
+        <div class="kpi-header">
+          <span class="kpi-title">Projects Portfolio</span>
+          <div class="kpi-icon-box"><i class="bi bi-journal-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ perf.overview.total_projects }} <span class="fs-6 text-muted fw-normal">Order{{ perf.overview.total_projects|pluralize }}</span></div>
+        <div class="kpi-subtitle text-muted">Assigned solar project bookings</div>
+      </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card kpi-emerald h-100">
+        <div class="kpi-header">
+          <span class="kpi-title">Collections Received</span>
+          <div class="kpi-icon-box"><i class="bi bi-cash-stack"></i></div>
+        </div>
+        <div class="kpi-value text-success">₹{{ perf.overview.total_collected|floatformat:0|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Advance &amp; received payments</div>
+      </div>
+    </div>
+  </div><!-- Assigned Solar Projects Portfolio Table (Single Unified Table) -->
+  <div class="card-saas mb-4 border shadow-2xs" style="border-radius: 12px; border-color: #e2e8f0 !important; background: #ffffff;">
+    <div class="card-header-clean d-flex align-items-center justify-content-between p-3.5 border-bottom" style="border-color: #f1f5f9 !important;">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <h5 class="mb-0 fw-bold font-heading text-dark" style="font-size: 1.05rem;">Assigned Solar Projects Portfolio</h5>
+          <span class="badge rounded-pill fw-semibold border px-2.5 py-1" style="background-color: #ecfdf5; color: #059669; border-color: #a7f3d0 !important; font-size: 0.74rem;">
+            {{ perf.all_projects.count }} Project{{ perf.all_projects.count|pluralize }}
+          </span>
+        </div>
+        <small class="text-muted" style="font-size: 0.76rem;">Solar installation orders and commercial bookings assigned to this team member</small>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-saas align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-3 py-2.5">Booking Ref</th>
+            <th class="py-2.5">Customer</th>
+            <th class="py-2.5">Capacity</th>
+            <th class="py-2.5">Stage</th>
+            <th class="py-2.5">Progress %</th>
+            <th class="py-2.5">Project Value</th>
+            <th class="py-2.5">Booking Date</th>
+            <th class="py-2.5 pe-3 text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in perf.all_projects %}
+            <tr>
+              <td class="ps-3 py-2.5">
+                <a href="{{ b.get_absolute_url }}" class="fw-bold text-primary text-decoration-none font-monospace">
+                  {{ b.booking_ref }}
+                </a>
+              </td>
+              <td class="py-2.5">
+                <a href="{{ b.customer.get_absolute_url }}" class="text-dark text-decoration-none fw-semibold">
+                  {{ b.customer.name|title }}
+                </a>
+                <div class="text-muted small" style="font-size: 0.72rem;">{{ b.customer.city|title }}</div>
+              </td>
+              <td class="py-2.5">
+                <span class="badge bg-light text-dark border">{{ b.system_capacity_kw }} kW</span>
+              </td>
+              <td class="py-2.5">
+                {% if b.is_cancelled %}
+                  <span class="badge rounded-pill fw-semibold border px-2.5 py-1" style="background-color: #fef2f2; color: #dc2626; border-color: #fecaca !important; font-size: 0.74rem;">
+                    <span class="rounded-circle d-inline-block me-1" style="width: 6px; height: 6px; background-color: #dc2626;"></span>
+                    Cancelled
+                  </span>
+                {% else %}
+                  <span class="badge rounded-pill fw-semibold border px-2.5 py-1" style="background-color: {{ b.stage_info.color }}18; color: {{ b.stage_info.color }}; border-color: {{ b.stage_info.color }}40 !important; font-size: 0.74rem;">
+                    <span class="rounded-circle d-inline-block me-1" style="width: 6px; height: 6px; background-color: {{ b.stage_info.color }};"></span>
+                    {{ b.stage_name_clean }}
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-2.5" style="min-width: 130px;">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height: 6px; border-radius: 3px;">
+                    <div class="progress-bar {% if b.installation_progress == 100 %}bg-success{% else %}bg-primary{% endif %}" role="progressbar" style="width: {{ b.installation_progress }}%;"></div>
+                  </div>
+                  <span class="small fw-bold text-muted" style="font-size: 0.75rem;">{{ b.installation_progress }}%</span>
+                </div>
+              </td>
+              <td class="py-2.5 fw-bold text-dark font-monospace">₹{{ b.booking_amount|floatformat:0|intcomma }}</td>
+              <td class="py-2.5 text-muted small">{{ b.booking_date|date:"M d, Y" }}</td>
+              <td class="py-2.5 pe-3 text-end">
+                <a href="{{ b.get_absolute_url }}" class="btn btn-sm btn-solar-outline py-1 px-2.5 shadow-2xs" title="View Booking">
+                  <i class="bi bi-arrow-right"></i>
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <div class="empty-state-card py-4 text-center">
+                  <div class="empty-icon-circle"><i class="bi bi-folder2-open"></i></div>
+                  <h6 class="fw-bold text-dark mb-1">No Assigned Projects</h6>
+                  <p class="text-muted small mb-0">No solar installation projects are currently assigned to this team member.</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Edit Team Member (Role-Free) -->
+<div class="modal fade" id="editTeamModal" tabindex="-1" aria-labelledby="editTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold" id="editTeamModalLabel">
+          <i class="bi bi-pencil-square text-primary me-2"></i>Edit {{ member.name }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'core:team_update' member.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Full Name or Crew Identifier <span class="text-danger">*</span></label>
+            {{ edit_form.name }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title / Specialization (Optional)</label>
+            {{ edit_form.designation }}
+            <div class="form-text small">e.g. Senior Solar Advisor, Technical Lead, Field Operations</div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Phone Number <span class="text-danger">*</span></label>
+              {{ edit_form.phone }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Email Address</label>
+              {{ edit_form.email }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Internal Notes / Certifications</label>
+            {{ edit_form.notes }}
+          </div>
+
+          <div class="form-check mb-2">
+            {{ edit_form.is_active }}
+            <label class="form-check-label fw-semibold text-dark" for="{{ edit_form.is_active.id_for_label }}">
+              Member is active
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top p-3 bg-light justify-content-between">
+          <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteTeamModal">
+            <i class="bi bi-trash me-1"></i> Delete Member
+          </button>
+          <div>
+            <button type="button" class="btn btn-solar-outline me-1" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-solar-primary"><i class="bi bi-check-circle-fill me-1"></i> Update Member</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Delete Member Confirmation -->
+<div class="modal fade" id="deleteTeamModal" tabindex="-1" aria-labelledby="deleteTeamModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header bg-danger-subtle border-bottom p-4">
+        <h5 class="modal-title text-danger fw-bold" id="deleteTeamModalLabel">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Team Member
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p class="mb-0">
+          Are you sure you want to remove <strong>{{ member.name }}</strong> from the team roster? Historical bookings assigned to this person will not be affected.
+        </p>
+      </div>
+      <div class="modal-footer border-top p-3 bg-light">
+        <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+        <form action="{% url 'core:team_delete' member.pk %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Confirm Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

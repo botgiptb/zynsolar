@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Staff Performance & Sales Directory | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <a href="{% url 'reports:dashboard' %}" class="text-secondary text-decoration-none">Reports</a>
+  <span class="text-muted opacity-50">&bull;</span>
+  <span class="text-dark fw-bold text-truncate">Staff Performance</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Top Metrics Overview (Matching Teams KPI Design Exactly) -->
+  <div class="row g-3 mb-4">
+    <!-- 1. Active Staff -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Active Staff</span>
+          <h4 class="mb-0 fw-bold font-heading text-primary mt-1">{{ total_staff }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-people-fill"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Total Orders Booked -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Orders Booked</span>
+          <h4 class="mb-0 fw-bold font-heading text-primary mt-1">{{ total_orders_booked }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-journal-check"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Contracted Revenue -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Contracted Revenue</span>
+          <h4 class="mb-0 fw-bold font-heading text-success mt-1">₹{{ total_pipeline_value|floatformat:0|intcomma }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-currency-rupee"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Capacity Installed -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Capacity Installed</span>
+          <h4 class="mb-0 fw-bold font-heading text-primary mt-1">{{ total_capacity_kw|floatformat:1 }} <span class="fs-6 fw-normal text-muted">kW</span></h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eef2ff; color: #4f46e5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Staff Operational Grid (Matching Teams Performance Table Structure Exactly) -->
+  <div class="card-saas mb-4">
+    <div class="p-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h6 class="mb-0 fw-bold font-heading text-dark">Staff Performance & Directory</h6>
+        <p class="text-muted small mb-0 mt-0.5">Real-time operational delivery and commercial portfolio per staff executive.</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'reports:team_performance' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-diagram-3 me-1"></i>Team Performance
+        </a>
+        <a href="{% url 'core:user_list' %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-gear me-1"></i>Manage Users
+        </a>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" style="font-size: 0.86rem;">
+        <thead class="bg-light text-muted fw-semibold" style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          <tr>
+            <th class="ps-3 py-2.5">Staff Member</th>
+            <th class="py-2.5">System Role</th>
+            <th class="py-2.5 text-center">Orders Booked</th>
+            <th class="py-2.5 text-end">Capacity (kW)</th>
+            <th class="py-2.5 text-end">Total Contract Value</th>
+            <th class="py-2.5 text-center">Active Tasks</th>
+            <th class="py-2.5 pe-3 text-end">Last Login</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in staff_list %}
+          <tr>
+            <!-- Staff Member with Work Profile Link & Squircle Avatar -->
+            <td class="ps-3 py-2.5">
+              <a href="{% url 'core:team_detail' item.team_member_id %}" class="text-decoration-none d-flex align-items-center gap-2" title="View Work Profile & Performance Portfolio">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; {% if item.avatar_url %}background-image: url('{{ item.avatar_url }}'); background-size: cover; background-position: center;{% endif %}">
+                  {% if not item.avatar_url %}
+                    {{ item.user.first_name|first|default:item.user.username|first|upper }}
+                  {% endif %}
+                </div>
+                <div>
+                  <div class="fw-bold text-dark hover-primary">{{ item.user.get_full_name|default:item.user.username }}</div>
+                  <div class="text-muted" style="font-size: 0.74rem;">@{{ item.user.username }}{% if item.user.email %} &bull; {{ item.user.email }}{% endif %}</div>
+                </div>
+              </a>
+            </td>
+
+            <!-- Role (Clean text matching Team Leader column) -->
+            <td class="py-2.5">
+              <span class="text-dark fw-medium">{{ item.role|default:"Staff" }}</span>
+            </td>
+
+            <!-- Orders Booked Count (Clean text matching Assigned Orders in Teams) -->
+            <td class="py-2.5 text-center">
+              {% if item.orders_count > 0 %}
+                <a href="{% url 'bookings:list' %}?salesperson={{ item.user.get_full_name|default:item.user.username }}" class="fw-bold text-dark text-decoration-none hover-primary" title="View orders booked by this staff member">
+                  {{ item.orders_count }} Order{{ item.orders_count|pluralize }}
+                </a>
+              {% else %}
+                <span class="text-muted opacity-60">0 Orders</span>
+              {% endif %}
+            </td>
+
+            <!-- Capacity (kW) (Matching Capacity Installed in Teams) -->
+            <td class="py-2.5 text-end fw-semibold text-dark">
+              {{ item.total_kw|floatformat:1 }} kW
+            </td>
+
+            <!-- Total Contract Value (Matching Total Project Value in Teams) -->
+            <td class="py-2.5 text-end fw-bold text-dark">
+              ₹{{ item.total_value|floatformat:0|intcomma }}
+            </td>
+
+            <!-- Active Tasks (Matching Members pill in Teams) -->
+            <td class="py-2.5 text-center">
+              {% if item.active_tasks > 0 %}
+                <a href="{% url 'bookings:task_list' %}?assigned_to={{ item.user.id }}" class="badge rounded-pill bg-light text-dark border px-2 py-0.5 text-decoration-none fw-semibold hover-primary" style="font-size: 0.72rem;">
+                  {{ item.active_tasks }} Active
+                </a>
+              {% else %}
+                <span class="badge rounded-pill bg-light text-muted border px-2 py-0.5" style="font-size: 0.72rem;">0 Tasks</span>
+              {% endif %}
+            </td>
+
+            <!-- Last Login Timestamp (Aligned right) -->
+            <td class="py-2.5 pe-3 text-end text-muted small" style="font-size: 0.78rem;">
+              {% if item.last_login %}
+                <span class="text-dark fw-medium">{{ item.last_login|date:"M d, Y" }}</span>
+                <span class="text-muted opacity-75 d-block" style="font-size: 0.7rem;">{{ item.last_login|date:"h:i A" }}</span>
+              {% else %}
+                <span class="text-muted opacity-50 fst-italic">Never logged in</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">No operational staff records found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

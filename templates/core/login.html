@@ -1,0 +1,63 @@
+{% extends "auth_base.html" %}
+
+{% block title %}Sign In | zynsolar CRM{% endblock %}
+{% block max_width %}440px{% endblock %}
+
+{% block auth_content %}
+<div>
+  <form method="post" action="{% url 'core:login' %}">
+    {% csrf_token %}
+
+    {% if is_pending_approval %}
+      <div class="alert alert-warning border-0 d-flex align-items-start p-3 mb-3" style="border-radius: 12px; font-size: 0.83rem;">
+        <i class="bi bi-hourglass-split fs-4 me-2.5 flex-shrink-0 text-warning"></i>
+        <div>
+          <div class="fw-bold mb-0.5">Account Pending Approval</div>
+          <div>Your registration for <strong>@{{ entered_username }}</strong> is awaiting administrator review.</div>
+        </div>
+      </div>
+    {% elif is_rejected %}
+      <div class="alert alert-danger border-0 d-flex align-items-start p-3 mb-3" style="border-radius: 12px; font-size: 0.83rem;">
+        <i class="bi bi-x-octagon-fill fs-4 me-2.5 flex-shrink-0 text-danger"></i>
+        <div>
+          <div class="fw-bold mb-0.5">Registration Not Approved</div>
+          <div>The administrator has rejected this registration. Please contact support.</div>
+        </div>
+      </div>
+    {% elif form.errors %}
+      <div class="alert alert-danger small mb-3 border-0 d-flex align-items-center p-3" style="border-radius: 12px; font-size: 0.83rem;">
+        <i class="bi bi-x-circle-fill fs-5 me-2.5 text-danger flex-shrink-0"></i>
+        <div>Invalid username or password. Please verify your credentials.</div>
+      </div>
+    {% endif %}
+
+    <!-- Username Field -->
+    <div class="mb-3">
+      <label class="form-label-custom">Username</label>
+      <div class="input-group-custom">
+        <div class="input-icon-box"><i class="bi bi-person-fill"></i></div>
+        <input type="text" name="username" class="form-control-custom" placeholder="Enter your username" value="{{ entered_username|default:'' }}" required autofocus autocomplete="username">
+      </div>
+    </div>
+
+    <!-- Password Field with Show/Hide Eye Toggle -->
+    <div class="mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <label class="form-label-custom mb-0">Password</label>
+      </div>
+      <div class="input-group-custom">
+        <div class="input-icon-box"><i class="bi bi-shield-lock-fill"></i></div>
+        <input type="password" name="password" id="id_login_password" class="form-control-custom" placeholder="Enter your password" required autocomplete="current-password">
+        <button type="button" class="password-toggle-btn" title="Toggle password visibility" tabindex="-1">
+          <i class="bi bi-eye"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Submit Button with Animated Shine Sweep -->
+    <button type="submit" class="btn-auth-shine">
+      <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Dashboard
+    </button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,897 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Operations Calendar | zynsolar CRM{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ========================================================
+     FullCalendar Premium SaaS Design - Eliminating "Code Feel"
+     ======================================================== */
+  
+  #fullCalendarRoot {
+    font-family: inherit;
+  }
+
+  /* 1. Outer ScrollGrid & Soft Borders */
+  .fc-theme-standard .fc-scrollgrid {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  }
+
+  .fc-theme-standard td, 
+  .fc-theme-standard th {
+    border-color: #f1f5f9 !important;
+  }
+
+  .fc-scrollgrid-section-header th {
+    border-top: none !important;
+  }
+
+  /* 2. Column Headers (Day Names: Mon, Tue, Wed...) - No Blue Underlines */
+  .fc .fc-col-header-cell {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    padding: 12px 0 !important;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    color: #64748b !important;
+    font-size: 0.74rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    text-decoration: none !important;
+    display: block !important;
+    text-align: center !important;
+  }
+  .fc .fc-col-header-cell-cushion:hover {
+    color: #334155 !important;
+    text-decoration: none !important;
+  }
+
+  /* 3. Day Grid Day Cells & Numbers - No Blue Underlines */
+  .fc-theme-standard .fc-daygrid-day-frame {
+    min-height: 108px !important;
+    padding: 2px !important;
+    transition: background-color 0.15s ease;
+  }
+
+  .fc-theme-standard .fc-daygrid-day:hover .fc-daygrid-day-frame {
+    background-color: rgba(248, 250, 252, 0.75);
+  }
+
+  .fc .fc-daygrid-day-top {
+    flex-direction: row !important;
+    justify-content: flex-end !important;
+    padding: 6px 8px 3px 8px !important;
+  }
+
+  .fc .fc-daygrid-day-number {
+    color: #475569 !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    width: 28px !important;
+    height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 7px !important;
+    transition: all 0.15s ease !important;
+  }
+
+  .fc .fc-daygrid-day-number:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    text-decoration: none !important;
+  }
+
+  /* 4. Today Cell - Refined Modern Badge (Replaces Yellow Highlight) */
+  .fc .fc-daygrid-day.fc-day-today {
+    background-color: #fbfcfe !important;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+    background-color: rgba(240, 249, 255, 0.45) !important;
+  }
+
+  .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25) !important;
+  }
+
+  /* 5. Outside / Other Month Days */
+  .fc .fc-daygrid-day.fc-day-other {
+    background-color: #fafbfc !important;
+  }
+
+  .fc .fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+    color: #cbd5e1 !important;
+    opacity: 0.6 !important;
+  }
+
+  /* 6. Event Pills - Sleek Modern Chips with Left Accent Bars */
+  .fc-daygrid-event {
+    margin: 2px 4px 3px 4px !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+    font-size: 0.76rem !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+    border-width: 1px !important;
+    border-style: solid !important;
+    transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+  }
+
+  .fc-daygrid-event:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.09) !important;
+    text-decoration: none !important;
+    filter: brightness(0.98);
+  }
+
+  .fc-event-main {
+    padding: 0 !important;
+  }
+
+  .fc-event-title {
+    font-weight: 600 !important;
+    letter-spacing: -0.01em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .fc-daygrid-event-dot {
+    display: none !important;
+  }
+
+  /* Left accent borders */
+  .cal-task-high {
+    border-left: 3.5px solid #ef4444 !important;
+  }
+
+  .cal-task-project {
+    border-left: 3.5px solid #3b82f6 !important;
+  }
+
+  .cal-task-standard {
+    border-left: 3.5px solid #10b981 !important;
+  }
+
+  /* More items popover / link */
+  .fc-more-link {
+    color: #64748b !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    padding: 2px 7px !important;
+    border-radius: 5px !important;
+    background: #f1f5f9 !important;
+    text-decoration: none !important;
+    margin: 2px 4px !important;
+    display: inline-block !important;
+  }
+
+  .fc-more-link:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    text-decoration: none !important;
+  }
+
+  /* TimeGrid (Week & Day Views) - No Yellow Today Column */
+  .fc .fc-timegrid-col.fc-day-today {
+    background-color: rgba(241, 245, 249, 0.45) !important;
+  }
+
+  .fc .fc-timegrid-slot {
+    height: 2.2rem !important;
+    border-color: #f1f5f9 !important;
+  }
+
+  .fc .fc-timegrid-slot-label-cushion {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .fc .fc-timegrid-axis-cushion {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    font-weight: 600;
+  }
+
+  .fc .fc-timegrid-event {
+    border-radius: 6px !important;
+    padding: 4px 6px !important;
+    box-shadow: 0 2px 5px rgba(15, 23, 42, 0.06) !important;
+  }
+
+  /* Agenda / List View - No Blue Underlined Day Headers */
+  .fc-theme-standard .fc-list {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+
+  .fc .fc-list-table {
+    border: none !important;
+  }
+
+  .fc .fc-list-day-cushion {
+    background-color: #f8fafc !important;
+    padding: 10px 14px !important;
+  }
+
+  .fc .fc-list-day-cushion a,
+  .fc .fc-list-day-text,
+  .fc .fc-list-day-side-text {
+    color: #334155 !important;
+    text-decoration: none !important;
+    font-weight: 700 !important;
+    font-size: 0.76rem !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+  }
+
+  .fc .fc-list-day-side-text {
+    color: #64748b !important;
+    font-weight: 600 !important;
+  }
+
+  .fc .fc-list-event {
+    cursor: pointer !important;
+    transition: background-color 0.12s ease;
+  }
+
+  .fc .fc-list-event:hover td {
+    background-color: #f8fafc !important;
+  }
+
+  .fc .fc-list-event-title a {
+    color: #0f172a !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+  }
+
+  .fc .fc-list-event-title a:hover {
+    text-decoration: none !important;
+    color: #2563eb !important;
+  }
+
+  .fc .fc-list-event-time {
+    color: #64748b !important;
+    font-size: 0.76rem !important;
+    font-weight: 500 !important;
+  }
+
+  .fc .fc-list-empty {
+    background-color: transparent !important;
+    padding: 40px !important;
+    color: #94a3b8 !important;
+    font-size: 0.88rem;
+  }
+
+  /* 7. Interactive Filter Chips (Replacing Raw Form Checkboxes) */
+  .cal-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border-radius: 9999px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+
+  .cal-filter-pill:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+  }
+
+  .cal-filter-pill .pill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    opacity: 0.35;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+  }
+
+  .cal-filter-pill.active {
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  .cal-filter-pill.active .pill-dot {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+
+  .cal-filter-pill.active.pill-priority {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .cal-filter-pill.active.pill-standard {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+
+  .cal-filter-pill.active.pill-orders {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1e40af;
+  }
+
+  /* 8. Modern View Switcher Buttons */
+  .cal-view-group {
+    background: #f1f5f9;
+    padding: 3px;
+    border-radius: 9999px;
+    display: inline-flex;
+    gap: 2px;
+  }
+
+  .cal-view-btn {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    transition: all 0.15s ease;
+  }
+
+  .cal-view-btn:hover {
+    color: #0f172a;
+  }
+
+  .cal-view-btn.active {
+    background: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  }
+
+  /* 9. Sleek Rounded Date Nav Group */
+  .cal-nav-group {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    padding: 2px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .cal-nav-btn {
+    background: transparent;
+    border: none;
+    color: #475569;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.15s ease;
+    font-size: 0.8rem;
+  }
+
+  .cal-nav-btn:hover {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+
+  .cal-today-btn {
+    background: transparent;
+    border: none;
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 12px;
+    border-radius: 9999px;
+    transition: all 0.15s ease;
+  }
+
+  .cal-today-btn:hover {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <span class="text-dark fw-bold text-truncate">Operations Calendar</span>
+  <span class="text-muted opacity-50 d-none d-sm-inline">&bull;</span>
+  <span class="text-muted small d-none d-sm-inline" style="font-size: 0.78rem;">Scheduled Deadlines, Assignments & Team Workload</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Top KPI Header Summary (Standardized with Staff/Teams/Company SaaS Cards) -->
+  <div class="row g-3 mb-3">
+    <!-- 1. Total Scheduled -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Scheduled Tasks</span>
+          <div class="fs-4 fw-bold font-heading text-dark mt-1">{{ total_scheduled_count }}</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">Total calendar items</span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;">
+          <i class="bi bi-calendar2-check-fill fs-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Due Today -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Due Today</span>
+          <div class="fs-4 fw-bold font-heading text-dark mt-1">{{ due_today_count }}</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">Today's deadlines</span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #fffbeb; color: #d97706; border: 1px solid #fde68a;">
+          <i class="bi bi-clock-history fs-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. High Priority -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">High Priority</span>
+          <div class="fs-4 fw-bold font-heading text-danger mt-1">{{ high_priority_count }}</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">Urgent deadlines</span>
+        </div>
+        <div class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;">
+          <i class="bi bi-lightning-charge-fill fs-5"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Quick Action Button -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small text-uppercase fw-bold d-block" style="font-size: 0.68rem; letter-spacing: 0.05em;">Quick Action</span>
+          <div class="fw-bold text-dark mt-1" style="font-size: 0.92rem;">New Schedule</div>
+          <span class="text-muted small" style="font-size: 0.72rem;">Add to calendar</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-solar-primary d-inline-flex align-items-center gap-1.5 shadow-xs px-3" data-bs-toggle="modal" data-bs-target="#quickScheduleModal">
+          <i class="bi bi-plus-lg"></i>
+          <span>Schedule</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar SaaS Control Bar -->
+  <div class="card-saas p-3 mb-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+      
+      <!-- Date Navigation Controls & Title -->
+      <div class="d-flex align-items-center gap-2.5">
+        <div class="cal-nav-group">
+          <button type="button" class="cal-nav-btn" id="calPrevBtn" title="Previous Month">
+            <i class="bi bi-chevron-left"></i>
+          </button>
+          <button type="button" class="cal-today-btn" id="calTodayBtn">
+            Today
+          </button>
+          <button type="button" class="cal-nav-btn" id="calNextBtn" title="Next Month">
+            <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+
+        <h5 class="mb-0 fw-bold font-heading text-dark ms-1" id="calTitleDisplay">
+          <!-- Populated by FullCalendar -->
+        </h5>
+      </div>
+
+      <!-- Filters & View Switcher -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        
+        <!-- Team Filter -->
+        <div style="min-width: 140px;">
+          <select id="calTeamFilter" class="form-select form-select-sm rounded-3 shadow-2xs">
+            <option value="">All Teams</option>
+            {% for t in teams %}
+              <option value="{{ t.id }}">{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Staff Filter -->
+        <div style="min-width: 140px;">
+          <select id="calStaffFilter" class="form-select form-select-sm rounded-3 shadow-2xs">
+            <option value="">All Staff</option>
+            {% for u in staff_users %}
+              <option value="{{ u.username }}">{{ u.get_full_name|default:u.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- View Mode Switcher (Month, Week, Day, Agenda) -->
+        <div class="cal-view-group" role="group">
+          <button type="button" class="cal-view-btn active" data-view="dayGridMonth">Month</button>
+          <button type="button" class="cal-view-btn" data-view="timeGridWeek">Week</button>
+          <button type="button" class="cal-view-btn" data-view="timeGridDay">Day</button>
+          <button type="button" class="cal-view-btn" data-view="listMonth">Agenda</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Pills / Categories (Replaces Raw Form Checkboxes) -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mt-3 pt-2.5 border-top border-light-subtle">
+      <span class="text-muted fw-bold me-1" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">Filters:</span>
+
+      <button type="button" class="cal-filter-pill active pill-priority" data-layer="high_priority">
+        <span class="pill-dot bg-danger"></span>
+        <span>High Priority</span>
+      </button>
+
+      <button type="button" class="cal-filter-pill active pill-standard" data-layer="standard">
+        <span class="pill-dot bg-success"></span>
+        <span>Standard Tasks</span>
+      </button>
+
+      <button type="button" class="cal-filter-pill active pill-orders" data-layer="project_linked">
+        <span class="pill-dot bg-primary"></span>
+        <span>Solar Orders</span>
+      </button>
+
+      <div class="ms-auto text-muted small d-none d-md-flex align-items-center gap-1.5" style="font-size: 0.75rem;">
+        <i class="bi bi-arrows-move text-secondary"></i>
+        <span>Drag items to reschedule dates</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Container Card -->
+  <div class="card-saas p-3 mb-4">
+    <div id="fullCalendarRoot" style="min-height: 640px;"></div>
+  </div>
+
+</div>
+
+<!-- Event Details Modal (Polished SaaS Dialog) -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-labelledby="eventDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+      <div class="modal-header pb-2 border-light-subtle">
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge rounded-pill fw-bold" id="modalEventTypeBadge">Task</span>
+          <h6 class="modal-title fw-bold text-dark font-heading mb-0 text-truncate" style="max-width: 320px;" id="modalEventTitle">Title</h6>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div class="row g-2.5 small" id="modalEventDetailsBody">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <div class="modal-footer pt-1 border-light-subtle">
+        <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Close</button>
+        <a href="#" id="modalEventActionBtn" class="btn btn-sm btn-solar-primary rounded-pill px-3">
+          <i class="bi bi-box-arrow-up-right me-1"></i>Open in Action Center
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Schedule Modal -->
+<div class="modal fade" id="quickScheduleModal" tabindex="-1" aria-labelledby="quickScheduleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+      <div class="modal-header pb-2 border-light-subtle">
+        <h6 class="modal-title fw-bold font-heading text-dark" id="quickScheduleModalLabel">
+          <i class="bi bi-calendar-plus text-primary me-1.5"></i>Schedule New Task / Work Item
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'bookings:task_create' %}" id="quickScheduleForm">
+        {% csrf_token %}
+        <div class="modal-body pt-2">
+
+          <div class="mb-2.5">
+            <label class="form-label small fw-semibold text-dark mb-1">Title / Purpose <span class="text-danger">*</span></label>
+            <input type="text" name="title" id="quickScheduleTitle" class="form-control form-control-sm rounded-3" placeholder="e.g. Inverter Testing, Grid Sync, or Client Meeting" required>
+          </div>
+
+          <div class="mb-2.5">
+            <label class="form-label small fw-semibold text-dark mb-1">Description / Notes (Optional)</label>
+            <textarea name="description" class="form-control form-control-sm rounded-3" rows="2" placeholder="Specific notes or instructions for this scheduled event..."></textarea>
+          </div>
+
+          <div class="mb-2.5">
+            <label class="form-label small fw-semibold text-dark mb-1">Linked Solar Order (Optional)</label>
+            <select name="booking_id" class="form-select form-select-sm rounded-3">
+              <option value="">None (Standalone Work Item)</option>
+              {% for b in active_bookings %}
+                <option value="{{ b.id }}">#{{ b.booking_ref }} &mdash; {{ b.customer.name }} ({{ b.system_capacity_kw }} kW)</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark mb-1">Scheduled Date <span class="text-danger">*</span></label>
+              <input type="date" name="due_date" id="quickScheduleDate" class="form-control form-control-sm rounded-3" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark mb-1">Assign Staff</label>
+              <select name="assigned_to" class="form-select form-select-sm rounded-3">
+                <option value="">Unassigned</option>
+                {% for u in staff_users %}
+                  <option value="{{ u.id }}" {% if u.id == request.user.id %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- High Priority Switch -->
+          <div class="form-check form-switch p-2 px-3 rounded-3 border d-flex align-items-center justify-content-between mt-2" style="background: #fff8f8; border-color: #fecaca !important;">
+            <label class="form-check-label fw-bold text-danger mb-0" for="quickHighPrioritySwitch" style="font-size: 0.78rem; cursor: pointer;">
+              <i class="bi bi-lightning-charge-fill text-danger me-1"></i>High Priority Flag
+            </label>
+            <input class="form-check-input ms-2" type="checkbox" role="switch" name="is_high_priority" value="true" id="quickHighPrioritySwitch" style="cursor: pointer; width: 34px; height: 18px;">
+          </div>
+        </div>
+
+        <div class="modal-footer pt-1 border-light-subtle">
+          <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary rounded-pill px-3">Add to Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Load FullCalendar Library (Local with CDN fallback) -->
+<script src="/static/js/fullcalendar.min.js"></script>
+<script>
+if (typeof FullCalendar === 'undefined') {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"><\/script>');
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const calendarEl = document.getElementById('fullCalendarRoot');
+  const titleDisplay = document.getElementById('calTitleDisplay');
+
+  function getActiveLayers() {
+    const activePills = document.querySelectorAll('.cal-filter-pill.active');
+    return Array.from(activePills).map(p => p.dataset.layer).join(',');
+  }
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    headerToolbar: false,
+    editable: true,
+    selectable: true,
+    dayMaxEvents: 4,
+    eventTimeFormat: {
+      hour: 'numeric',
+      minute: '2-digit',
+      meridiem: 'short'
+    },
+    events: function(info, successCallback, failureCallback) {
+      const team = document.getElementById('calTeamFilter').value;
+      const staff = document.getElementById('calStaffFilter').value;
+      const layers = getActiveLayers();
+
+      const url = `{% url 'bookings:calendar_events_json' %}?start=${info.startStr}&end=${info.endStr}&team=${team}&staff=${staff}&layers=${layers}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => successCallback(data))
+        .catch(err => {
+          console.error('Calendar feed error:', err);
+          failureCallback(err);
+        });
+    },
+
+    datesSet: function(dateInfo) {
+      if (titleDisplay) {
+        titleDisplay.textContent = dateInfo.view.title;
+      }
+    },
+
+    // Click on event opens Detail Modal
+    eventClick: function(info) {
+      info.jsEvent.preventDefault();
+      const p = info.event.extendedProps;
+      const modalBadge = document.getElementById('modalEventTypeBadge');
+      const modalTitle = document.getElementById('modalEventTitle');
+      const modalBody = document.getElementById('modalEventDetailsBody');
+      const actionBtn = document.getElementById('modalEventActionBtn');
+
+      modalTitle.textContent = p.title || info.event.title;
+
+      if (p.is_high_priority) {
+        modalBadge.textContent = 'High Priority';
+        modalBadge.className = 'badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle';
+      } else {
+        modalBadge.textContent = 'Scheduled Item';
+        modalBadge.className = 'badge rounded-pill bg-success-subtle text-success border border-success-subtle';
+      }
+
+      let detailsHtml = `
+        <div class="col-6">
+          <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Scheduled Date</span>
+          <span class="fw-semibold text-dark">${p.due_date || info.event.startStr}</span>
+        </div>
+        <div class="col-6">
+          <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Assigned Staff</span>
+          <span class="fw-medium text-dark">${p.assigned_name || 'Unassigned'}</span>
+        </div>
+      `;
+
+      if (p.description) {
+        detailsHtml += `
+          <div class="col-12 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Description</span>
+            <p class="mb-0 text-dark small bg-light p-2 rounded-2 border">${p.description}</p>
+          </div>
+        `;
+      }
+
+      if (p.booking_ref) {
+        detailsHtml += `
+          <div class="col-6 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Linked Solar Order</span>
+            <span class="badge bg-light text-primary border fw-semibold">#${p.booking_ref}</span>
+          </div>
+        `;
+      }
+
+      if (p.customer_name) {
+        detailsHtml += `
+          <div class="col-6 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Customer</span>
+            <span class="fw-bold text-dark">${p.customer_name}</span>
+          </div>
+        `;
+      }
+
+      if (p.customer_phone) {
+        detailsHtml += `
+          <div class="col-6 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Customer Phone</span>
+            <a href="tel:${p.customer_phone}" class="text-decoration-none text-dark fw-semibold"><i class="bi bi-telephone text-success me-1"></i>${p.customer_phone}</a>
+          </div>
+        `;
+      }
+
+      if (p.capacity_kw) {
+        detailsHtml += `
+          <div class="col-6 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Solar Capacity</span>
+            <span class="badge bg-warning-subtle text-dark border border-warning-subtle fw-bold">${p.capacity_kw} kW</span>
+          </div>
+        `;
+      }
+
+      if (p.checklist_summary) {
+        detailsHtml += `
+          <div class="col-12 mt-1">
+            <span class="text-muted text-uppercase d-block" style="font-size: 0.68rem; font-weight: 600;">Task Checklist</span>
+            <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle fw-semibold">${p.checklist_summary} completed</span>
+          </div>
+        `;
+      }
+
+      modalBody.innerHTML = detailsHtml;
+      actionBtn.href = p.url || '#';
+
+      const modal = new bootstrap.Modal(document.getElementById('eventDetailModal'));
+      modal.show();
+    },
+
+    // Drag-and-drop to reschedule event date
+    eventDrop: function(info) {
+      const eventId = info.event.id;
+      const newDate = info.event.startStr;
+
+      const formData = new FormData();
+      formData.append('event_id', eventId);
+      formData.append('new_date', newDate);
+
+      fetch("{% url 'bookings:calendar_event_move' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          if (window.SolarToast) SolarToast.success(data.message || 'Rescheduled successfully.');
+        } else {
+          info.revert();
+          alert(data.message || 'Reschedule failed.');
+        }
+      })
+      .catch(err => {
+        info.revert();
+        console.error('Drag drop error:', err);
+        alert('Network error while moving event.');
+      });
+    }
+  });
+
+  calendar.render();
+
+  // Date Navigation
+  document.getElementById('calPrevBtn').addEventListener('click', () => calendar.prev());
+  document.getElementById('calNextBtn').addEventListener('click', () => calendar.next());
+  document.getElementById('calTodayBtn').addEventListener('click', () => calendar.today());
+
+  // View Switcher (Month, Week, Day, Agenda)
+  document.querySelectorAll('.cal-view-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      calendar.changeView(this.dataset.view);
+    });
+  });
+
+  // Filters
+  document.getElementById('calTeamFilter').addEventListener('change', () => calendar.refetchEvents());
+  document.getElementById('calStaffFilter').addEventListener('change', () => calendar.refetchEvents());
+
+  // Filter Pills (High Priority, Standard, Solar Orders)
+  document.querySelectorAll('.cal-filter-pill').forEach(pill => {
+    pill.addEventListener('click', function() {
+      this.classList.toggle('active');
+      calendar.refetchEvents();
+    });
+  });
+});
+</script>
+{% endblock %}

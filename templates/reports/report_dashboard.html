@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Company Financial & BI Report | zynsolar CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+  .export-dropdown-item {
+    transition: all 0.15s ease;
+  }
+  .export-dropdown-item:hover, .export-dropdown-item:focus {
+    background-color: #f8fafc !important;
+  }
+  .export-dropdown-item:active {
+    background-color: #f1f5f9 !important;
+  }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center gap-1.5 text-truncate" style="font-size: 0.88rem;">
+  <a href="{% url 'reports:dashboard' %}" class="text-secondary text-decoration-none">Reports</a>
+  <span class="text-muted opacity-50">&bull;</span>
+  <span class="text-dark fw-bold text-truncate">Company Financials</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+
+  <!-- Interactive Filter & Unified Export Bar -->
+  <div class="card-saas p-3 mb-3 border shadow-2xs" style="border-radius: 12px; border-color: #e2e8f0 !important; background: #ffffff;">
+    <form method="get" class="row g-2.5 align-items-end">
+      <!-- 1. Preset Date Filter -->
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label mb-1.5 fw-bold text-secondary text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">Date Range</label>
+        <select name="preset" class="form-select shadow-2xs" style="height: 38px; font-size: 0.84rem; padding: 0.375rem 0.85rem; border-radius: 8px; border-color: #cbd5e1;" onchange="toggleCustomDates(this.value)">
+          <option value="today" {% if preset == 'today' %}selected{% endif %}>Today</option>
+          <option value="this_week" {% if preset == 'this_week' %}selected{% endif %}>This Week</option>
+          <option value="this_month" {% if preset == 'this_month' %}selected{% endif %}>This Month</option>
+          <option value="last_month" {% if preset == 'last_month' %}selected{% endif %}>Last Month</option>
+          <option value="this_year" {% if preset == 'this_year' %}selected{% endif %}>This Year</option>
+          <option value="all_time" {% if preset == 'all_time' or not preset %}selected{% endif %}>All Time</option>
+          <option value="custom" {% if preset == 'custom' %}selected{% endif %}>Custom Date Range</option>
+        </select>
+      </div>
+
+      <!-- 2. Salesperson Filter -->
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label mb-1.5 fw-bold text-secondary text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">Salesperson</label>
+        <select name="salesperson" class="form-select shadow-2xs" style="height: 38px; font-size: 0.84rem; padding: 0.375rem 0.85rem; border-radius: 8px; border-color: #cbd5e1;">
+          <option value="">All Sales Personnel</option>
+          {% for sp in all_salespersons %}
+            <option value="{{ sp }}" {% if salesperson_filter == sp %}selected{% endif %}>{{ sp }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- 3. City Filter -->
+      <div class="col-12 col-sm-6 col-lg-2">
+        <label class="form-label mb-1.5 fw-bold text-secondary text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.04em;">City</label>
+        <select name="city" class="form-select shadow-2xs" style="height: 38px; font-size: 0.84rem; padding: 0.375rem 0.85rem; border-radius: 8px; border-color: #cbd5e1;">
+          <option value="">All Cities</option>
+          {% for ct in all_cities %}
+            {% if ct and ct.strip %}
+              <option value="{{ ct }}" {% if city_filter|lower == ct|lower %}selected{% endif %}>{{ ct }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- 4. Filter Action Buttons -->
+      <div class="col-12 col-sm-6 col-lg-2">
+        <div class="d-flex align-items-center gap-1.5">
+          <button type="submit" class="btn btn-solar-primary w-100 d-inline-flex align-items-center justify-content-center gap-1 shadow-2xs" style="height: 38px; font-size: 0.82rem; font-weight: 600; border-radius: 8px;">
+            <i class="bi bi-funnel-fill"></i>
+            <span>Filter</span>
+          </button>
+          {% if preset != 'all_time' or salesperson_filter or city_filter %}
+            <a href="{% url 'reports:dashboard' %}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center shadow-2xs" style="height: 38px; width: 38px; flex-shrink: 0; border-radius: 8px;" title="Reset Filters">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- 5. Unified Export Dropdown Button -->
+      <div class="col-12 col-sm-6 col-lg-2">
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary dropdown-toggle w-100 d-inline-flex align-items-center justify-content-center gap-2 shadow-2xs" 
+                  type="button" data-bs-toggle="dropdown" aria-expanded="false" 
+                  style="height: 38px; font-size: 0.82rem; font-weight: 600; border-radius: 8px; border-color: #cbd5e1; background: #ffffff; color: #0f172a;">
+            <i class="bi bi-download text-secondary"></i>
+            <span>Export</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end border p-1.5 shadow-lg" 
+              style="font-size: 0.82rem; border-radius: 12px; border-color: #e2e8f0; min-width: 250px; box-shadow: 0 12px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06) !important;">
+            <li class="px-2.5 pt-1.5 pb-1 text-uppercase text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+              Export Data
+            </li>
+            <li>
+              <a class="dropdown-item export-dropdown-item d-flex align-items-center gap-2.5 rounded-2 p-2 text-decoration-none" href="{% url 'reports:export_csv' %}?type=bookings">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                  <i class="bi bi-file-earmark-spreadsheet"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold text-dark" style="font-size: 0.82rem; line-height: 1.2;">CSV Spreadsheet</div>
+                  <small class="text-muted" style="font-size: 0.71rem; line-height: 1.1;">Raw tabular data (.csv)</small>
+                </div>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item export-dropdown-item d-flex align-items-center gap-2.5 rounded-2 p-2 text-decoration-none" href="{% url 'reports:export_excel' %}">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                  <i class="bi bi-file-earmark-excel"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold text-dark" style="font-size: 0.82rem; line-height: 1.2;">Excel Workbook</div>
+                  <small class="text-muted" style="font-size: 0.71rem; line-height: 1.1;">Formatted spreadsheet (.xlsx)</small>
+                </div>
+              </a>
+            </li>
+            <li><hr class="dropdown-divider my-1.5 opacity-50"></li>
+            <li>
+              <a class="dropdown-item export-dropdown-item d-flex align-items-center gap-2.5 rounded-2 p-2 text-decoration-none" href="{% url 'reports:printable' %}" target="_blank">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                  <i class="bi bi-printer"></i>
+                </div>
+                <div>
+                  <div class="fw-semibold text-dark" style="font-size: 0.82rem; line-height: 1.2;">Print / PDF</div>
+                  <small class="text-muted" style="font-size: 0.71rem; line-height: 1.1;">Print-ready layout</small>
+                </div>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Custom Date Pickers (Shown when preset is custom) -->
+      <div class="col-12 {% if preset != 'custom' %}d-none{% endif %}" id="customDateRow">
+        <div class="row g-2 pt-2 border-top mt-2">
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-1">Start Date</label>
+            <input type="date" name="start_date" value="{{ start_date }}" class="form-control form-control-sm" style="border-radius: 8px;">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small text-muted mb-1">End Date</label>
+            <input type="date" name="end_date" value="{{ end_date }}" class="form-control form-control-sm" style="border-radius: 8px;">
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Summary KPI Cards (Matching Staff & Teams Standard Size & Layout Exactly) -->
+  <div class="row g-3 mb-4">
+    <!-- 1. Bookings -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Bookings</span>
+          <h4 class="mb-0 fw-bold font-heading text-primary mt-1">{{ total_bookings_count }} <span class="fs-6 fw-normal text-muted" style="font-size: 0.85rem !important;">({{ total_kw|floatformat:1 }} kW)</span></h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-journal-check"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Contract Value -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Contract Value</span>
+          <h4 class="mb-0 fw-bold font-heading text-dark mt-1">₹{{ total_value|floatformat:0|intcomma }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-cash-coin"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Collections with Recovery Rate Insight -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <div class="d-flex align-items-center gap-1.5">
+            <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Collections</span>
+            {% if total_value > 0 %}
+              <span class="badge rounded-pill fw-semibold" style="font-size: 0.68rem; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 2px 6px;">
+                {{ collection_rate }}%
+              </span>
+            {% endif %}
+          </div>
+          <h4 class="mb-0 fw-bold font-heading text-success mt-1">₹{{ total_collected|floatformat:0|intcomma }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-wallet2"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Outstanding -->
+    <div class="col-6 col-md-3">
+      <div class="card-saas p-3 d-flex align-items-center justify-content-between h-100">
+        <div>
+          <div class="d-flex align-items-center gap-1.5">
+            <span class="text-muted small fw-semibold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.04em;">Outstanding</span>
+            <span class="badge rounded-pill fw-semibold" style="font-size: 0.68rem; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 2px 6px;">
+              Pending
+            </span>
+          </div>
+          <h4 class="mb-0 fw-bold font-heading text-danger mt-1">₹{{ total_balance|floatformat:0|intcomma }}</h4>
+        </div>
+        <div style="width: 40px; height: 40px; border-radius: 8px; background: #fef2f2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtered Solar Orders Register (Matching Teams & Staff Table Design) -->
+  <div class="card-saas mb-4">
+    <div class="p-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <h6 class="mb-0 fw-bold font-heading text-dark">Filtered Solar Orders Register</h6>
+        <p class="text-muted small mb-0 mt-0.5">Comprehensive commercial register of bookings matching current criteria.</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge rounded-pill bg-light text-dark border px-2.5 py-1" style="font-size: 0.74rem;">{{ bookings|length }} Records</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" style="font-size: 0.86rem;">
+        <thead class="bg-light text-muted fw-semibold" style="font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.04em;">
+          <tr>
+            <th class="ps-3 py-2.5">Booking Ref</th>
+            <th class="py-2.5">Customer</th>
+            <th class="py-2.5">Location</th>
+            <th class="py-2.5 text-center">Capacity</th>
+            <th class="py-2.5 text-center">Current Stage</th>
+            <th class="py-2.5 text-end">Booking Amount</th>
+            <th class="py-2.5 text-end">Advance Paid</th>
+            <th class="py-2.5 text-end">Balance</th>
+            <th class="py-2.5 pe-3 text-end">Salesperson</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in bookings %}
+            <tr>
+              <!-- Booking Ref (Clean dark link) -->
+              <td class="ps-3 py-2.5">
+                <a href="{{ b.get_absolute_url }}" class="fw-bold text-dark text-decoration-none hover-primary" title="View Booking Details">
+                  {{ b.booking_ref }}
+                </a>
+              </td>
+
+              <!-- Customer -->
+              <td class="py-2.5 fw-semibold text-dark">
+                {{ b.customer.name|title }}
+              </td>
+
+              <!-- Location -->
+              <td class="py-2.5 text-muted small">
+                {{ b.customer.city|title|default:"-" }}
+              </td>
+
+              <!-- Capacity -->
+              <td class="py-2.5 text-center">
+                <span class="badge rounded-pill bg-light text-dark border px-2 py-0.5" style="font-size: 0.72rem;">
+                  {{ b.system_capacity_kw }} kW
+                </span>
+              </td>
+
+              <!-- Current Stage -->
+              <td class="py-2.5 text-center">
+                {% if b.is_cancelled %}
+                  <span class="badge rounded-pill fw-semibold border px-2.5 py-0.5" style="background-color: #fef2f2; color: #dc2626; border-color: #fecaca !important; font-size: 0.72rem;">
+                    <span class="status-dot-inactive me-1" style="background-color: #dc2626;"></span>
+                    Cancelled
+                  </span>
+                {% else %}
+                  <span class="badge rounded-pill fw-semibold border px-2.5 py-0.5" style="background-color: {{ b.stage_display_color }}15; color: {{ b.stage_display_color }}; border-color: {{ b.stage_display_color }}35 !important; font-size: 0.72rem;">
+                    <span class="status-dot-active me-1" style="background-color: {{ b.stage_display_color }};"></span>
+                    {{ b.stage_display_name }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Booking Amount (Right aligned, clean sans font) -->
+              <td class="py-2.5 text-end fw-bold text-dark">
+                ₹{{ b.booking_amount|floatformat:0|intcomma }}
+              </td>
+
+              <!-- Advance Paid (Right aligned, clean sans font) -->
+              <td class="py-2.5 text-end fw-semibold text-dark">
+                ₹{{ b.advance_payment|floatformat:0|intcomma }}
+              </td>
+
+              <!-- Balance (Right aligned, clean sans font) -->
+              <td class="py-2.5 text-end fw-bold {% if b.balance_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+                ₹{{ b.balance_amount|floatformat:0|intcomma }}
+              </td>
+
+              <!-- Salesperson (Right aligned, muted small) -->
+              <td class="py-2.5 pe-3 text-end text-muted small">
+                {{ b.assigned_salesperson|default:"Unassigned" }}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <div class="empty-state-card py-4 text-center">
+                  <div class="empty-icon-circle">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-1">No Records Found</h6>
+                  <p class="text-muted small mb-0">Financial and installation reports will populate once bookings match the selected filters.</p>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleCustomDates(val) {
+  const row = document.getElementById('customDateRow');
+  if (row) {
+    if (val === 'custom') {
+      row.classList.remove('d-none');
+    } else {
+      row.classList.add('d-none');
+    }
+  }
+}
+</script>
+{% endblock %}

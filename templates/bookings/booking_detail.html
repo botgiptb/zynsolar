@@ -1,0 +1,2550 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Booking {{ booking.booking_ref }} | zynsolar CRM{% endblock %}
+
+{% block breadcrumbs %}
+<div class="d-flex align-items-center text-truncate" style="font-size: 0.88rem;">
+  <a href="{% url 'bookings:list' %}" class="text-secondary text-decoration-none fw-medium">Solar Orders</a>
+  <span class="text-muted opacity-40 mx-2">&bull;</span>
+  <span class="text-dark fw-bold text-truncate">{{ booking.booking_ref }}</span>
+  <span class="text-muted small ms-1.5 d-none d-sm-inline" style="margin-left: 6px;">({{ booking.customer.name|title }})</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0">
+  <!-- Executive Top Header & Stage Action Bar -->
+  <div class="card-saas p-3.5 p-md-4 mb-3.5 bg-white shadow-xs" style="border-radius: 14px; border: 1px solid #e2e8f0 !important;">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2.5 flex-wrap">
+          <h4 class="mb-0 fw-bold text-dark font-heading" style="letter-spacing: -0.01em;">{{ booking.booking_ref }}</h4>
+          {% if booking.is_cancelled %}
+            <span class="badge py-1 px-2.5 rounded-pill d-inline-flex align-items-center" style="background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-weight: 600; font-size: 0.78rem;">
+              <i class="bi bi-x-circle-fill" style="margin-right: 6px;"></i> CANCELLED
+            </span>
+          {% elif booking.is_on_hold %}
+            <span class="badge py-1 px-2.5 rounded-pill d-inline-flex align-items-center" style="background: #fef3c7; color: #b45309; border: 1px solid #fde68a; font-weight: 600; font-size: 0.78rem;">
+              <span class="rounded-circle d-inline-block" style="width: 7px; height: 7px; background-color: currentColor; margin-right: 6px;"></span>
+              On Hold
+            </span>
+          {% else %}
+            <span class="badge py-1 px-2.5 rounded-pill d-inline-flex align-items-center" style="background: {{ booking.stage_info.bg_header }}; color: {{ booking.stage_info.header_text }}; border: 1px solid {{ booking.stage_info.border_color }}; font-weight: 600; font-size: 0.78rem;">
+              <span class="rounded-circle d-inline-block" style="width: 7px; height: 7px; background-color: currentColor; margin-right: 6px;"></span>
+              {{ booking.get_stage_display }}
+              {% if booking.stage == 'INSTALLATION' %} ({{ booking.installation_progress }}%){% endif %}
+            </span>
+          {% endif %}
+        </div>
+        <div class="text-muted small mt-2 d-flex flex-wrap align-items-center gap-2" style="font-size: 0.82rem;">
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-person text-secondary" style="margin-right: 5px;"></i>
+            <span class="text-secondary" style="margin-right: 4px;">Customer:</span>
+            <a href="{{ booking.customer.get_absolute_url }}" class="fw-semibold text-dark text-decoration-none">{{ booking.customer.name|title }}</a>
+          </span>
+          <span class="text-muted opacity-40 mx-1">&bull;</span>
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-calendar3 text-secondary" style="margin-right: 5px;"></i>
+            <span>Placed on {{ booking.booking_date|date:"M d, Y" }}</span>
+          </span>
+          <span class="text-muted opacity-40 mx-1">&bull;</span>
+          <span class="d-inline-flex align-items-center">
+            <i class="bi bi-person-badge text-secondary" style="margin-right: 5px;"></i>
+            {% if booking.assigned_salesperson and booking.assigned_salesperson != "Unassigned" %}
+              <span>Assigned to <strong class="text-dark">{{ booking.assigned_salesperson }}</strong></span>
+            {% else %}
+              <span class="text-secondary">Unassigned</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-2 small">
+          <span class="text-secondary d-inline-flex align-items-center text-truncate" style="max-width: 620px;">
+            <i class="bi bi-geo-alt-fill text-danger flex-shrink-0" style="margin-right: 6px;"></i>
+            <strong class="text-dark me-1" style="margin-right: 4px;">Site:</strong> {{ booking.site_full_address }}
+          </span>
+          {% if booking.site_map_url %}
+            <a href="{{ booking.site_map_url }}" target="_blank" rel="noopener" class="text-decoration-none fw-semibold text-primary d-inline-flex align-items-center ms-1">
+              <i class="bi bi-box-arrow-up-right small" style="margin-right: 4px;"></i>Open Map
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Stage Advance & Operations Controls -->
+      <div class="d-flex align-items-center gap-2 flex-wrap flex-md-nowrap">
+        {% if not booking.is_cancelled %}
+          <!-- Status is always available, including for a newly created order. -->
+          {% if status_options %}
+            <button type="button" class="btn btn-sm btn-solar-primary shadow-xs px-3 py-1.5 fw-semibold d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#changeStatusModal">
+              <i class="bi bi-arrow-repeat" style="margin-right: 6px;"></i> Change Status
+            </button>
+          {% endif %}
+
+          <!-- Installation-only progress update -->
+          {% if booking.stage == 'INSTALLATION' %}
+            <button type="button" class="btn btn-sm btn-solar-outline shadow-xs px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#progressModal">
+              <i class="bi bi-speedometer2" style="margin-right: 6px;"></i> Update Progress
+            </button>
+          {% endif %}
+
+          {% if not status_options %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-1.5 px-2.5 small rounded-pill">
+              <i class="bi bi-patch-check-fill" style="margin-right: 5px;"></i> {{ booking.get_stage_display }}
+            </span>
+          {% endif %}
+
+          <a href="{% url 'bookings:edit' booking.pk %}" class="btn btn-sm btn-solar-outline shadow-xs px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center" title="Edit Booking Specs">
+            <i class="bi bi-pencil" style="margin-right: 6px;"></i> Edit
+          </a>
+
+          <!-- Cancel Trigger -->
+          <button type="button" class="btn btn-sm btn-outline-danger shadow-xs px-2.5 py-1.5 fw-semibold d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#cancelModal" title="Cancel Booking">
+            <i class="bi bi-x-circle" style="margin-right: 6px;"></i> Cancel
+          </button>
+        {% else %}
+          <!-- Reopen Trigger -->
+          <button type="button" class="btn btn-sm btn-solar-primary shadow-xs px-3 py-1.5 fw-semibold d-inline-flex align-items-center" data-bs-toggle="modal" data-bs-target="#reopenModal">
+            <i class="bi bi-arrow-counterclockwise" style="margin-right: 6px;"></i> Reopen Cancelled Booking
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Pipeline tracker: uses the exact same configured stages as the Kanban board. -->
+  <div class="stage-stepper-wrapper">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.05em; font-size: 0.74rem;">
+        Project Workflow Tracker
+      </div>
+      <div class="text-muted small">
+        Current Milestone: <strong class="text-dark">{{ booking.get_stage_display }}</strong>
+      </div>
+    </div>
+
+    {% if booking.is_cancelled %}
+      <div class="alert alert-danger mb-0 mt-3 d-flex align-items-start border-0 shadow-sm" style="border-radius: var(--radius-md);">
+        <i class="bi bi-x-octagon-fill fs-4 me-3 text-danger mt-1"></i>
+        <div>
+          <strong class="d-block text-danger">This solar booking has been marked as CANCELLED.</strong>
+          {% if booking.cancellation_category %}<div class="small text-secondary mt-1">Category: <strong>{{ booking.get_cancellation_category_display }}</strong></div>{% endif %}
+          <div class="small text-secondary mt-1">Reason: {{ booking.cancellation_reason|default:"No cancellation notes recorded." }}</div>
+          <div class="small text-muted mt-1">Terminated on: {{ booking.cancelled_at|date:"M d, Y H:i" }}</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="stage-stepper">
+        <div class="stage-stepper-progress" style="width: {{ workflow_progress }}%;"></div>
+        {% for workflow in workflow_stages %}
+          <div class="stage-step-item {% if workflow.is_current %}active{% elif workflow.is_completed %}completed{% endif %}">
+            <div class="step-circle">
+              {% if workflow.is_completed %}<i class="bi bi-check-lg"></i>{% else %}{{ forloop.counter }}{% endif %}
+            </div>
+            <div class="step-label">{{ workflow.stage.name }}</div>
+            <div class="step-subtext">
+              {% if workflow.timestamp %}
+                <span class="d-block fw-semibold text-dark">{{ workflow.timestamp|date:"M d, Y" }}</span>
+                <span class="d-block text-muted" style="font-size: 0.68rem;">{{ workflow.timestamp|date:"h:i A" }}</span>
+              {% elif workflow.is_current %}
+                <span class="d-block text-muted">Current status</span>
+              {% else %}
+                <span class="d-block text-muted">Pending</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Compact project summary: operational detail and payment balance, without a finance dashboard. -->
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-header">
+          <span class="kpi-title">Solar Capacity</span>
+          <div class="kpi-icon-box">
+            <i class="bi bi-lightning-charge-fill"></i>
+          </div>
+        </div>
+        <div class="kpi-value">{{ booking.system_capacity_kw }} kW</div>
+        <div class="kpi-subtitle text-muted">
+          {{ booking.number_of_panels }} Panels{% if booking.installation_type %} &bull; {{ booking.get_installation_type_display|truncatechars:20 }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-header">
+          <span class="kpi-title">Contract Value</span>
+          <div class="kpi-icon-box">
+            <i class="bi bi-currency-rupee"></i>
+          </div>
+        </div>
+        <div class="kpi-value">₹{{ booking.booking_amount|floatformat:2|intcomma }}</div>
+        <div class="kpi-subtitle text-muted">Agreed Project Total</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+      <div class="kpi-card {% if booking.balance_amount > 0 %}kpi-rose{% else %}kpi-emerald{% endif %}">
+        <div class="kpi-header">
+          <span class="kpi-title">Outstanding Balance</span>
+          <div class="kpi-icon-box">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+        </div>
+        <div class="kpi-value {% if booking.balance_amount > 0 %}text-danger{% else %}text-success{% endif %}">
+          ₹{{ booking.balance_amount|floatformat:2|intcomma }}
+        </div>
+        <div class="kpi-subtitle">
+          {% if booking.balance_amount > 0 %}
+            <span class="badge {{ booking.credit_status.badge_class }} py-1 px-2" style="font-size: 0.72rem;">{{ booking.credit_status.label }}</span>
+          {% else %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.72rem;">Account Settled</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Finance is useful, but it should not displace the site's next operational action. -->
+  <details class="card-saas mb-4">
+    <summary class="card-header-clean d-flex flex-wrap align-items-center justify-content-between gap-2" style="cursor: pointer; list-style: none;">
+      <div>
+        <h5 class="mb-0"><i class="bi bi-receipt text-success me-2"></i>Payments & Receipts</h5>
+        <small class="text-muted">Received ₹{{ booking.total_paid|floatformat:2|intcomma }} &bull; {{ booking.payment_percentage }}% collected</small>
+      </div>
+      <span class="btn btn-sm btn-solar-outline"><i class="bi bi-chevron-down me-1"></i>View payment history</span>
+    </summary>
+    <div class="card-body-clean p-0">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 border-bottom bg-light-subtle">
+        <span class="small text-muted">Detailed receipts, UTR numbers, and printable vouchers</span>
+        {% if not booking.is_cancelled %}
+          <button type="button" class="btn btn-sm btn-success text-white shadow-xs" data-bs-toggle="modal" data-bs-target="#recordPaymentModal"><i class="bi bi-plus-circle-fill me-1"></i>Record Payment</button>
+        {% endif %}
+      </div>
+      {% if payments %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.88rem;">
+            <thead class="bg-light text-uppercase text-muted" style="font-size: 0.72rem; letter-spacing: 0.04em;">
+              <tr>
+                <th class="ps-4">Receipt #</th>
+                <th>Payment Date</th>
+                <th>Milestone</th>
+                <th>Payment Mode</th>
+                <th>Ref / UTR</th>
+                <th class="text-end">Amount Paid</th>
+                <th>Recorded By</th>
+                <th class="text-end pe-4">Receipt Voucher</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+                <tr>
+                  <td class="ps-4 fw-bold font-monospace text-primary">
+                    <i class="bi bi-file-earmark-check-fill text-success me-1"></i>{{ p.receipt_number }}
+                  </td>
+                  <td class="text-muted">{{ p.payment_date|date:"M d, Y" }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ p.get_milestone_display }}</span>
+                  </td>
+                  <td>
+                    <span class="badge {{ p.method_badge_class }}">
+                      <i class="bi {{ p.method_icon }} me-1"></i>{{ p.get_payment_method_display }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if p.transaction_ref %}
+                      <span class="font-monospace text-secondary small">{{ p.transaction_ref }}</span>
+                    {% else %}
+                      <span class="text-muted small">&mdash;</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end fw-bold text-success fs-6">
+                    ₹{{ p.amount|floatformat:2|intcomma }}
+                  </td>
+                  <td>
+                    <small class="text-muted">{{ p.recorded_by_name }}</small>
+                  </td>
+                  <td class="text-end pe-4">
+                    <a href="{% url 'bookings:payment_receipt' p.pk %}" target="_blank" class="btn btn-sm btn-solar-outline py-1 px-2.5 shadow-xs" title="View & Print Official Receipt Voucher">
+                      <i class="bi bi-printer me-1"></i> Print Receipt
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="bg-light border-top">
+              <tr class="fw-bold">
+                <td colspan="5" class="ps-4 text-end text-muted small text-uppercase">Total Collections Received:</td>
+                <td class="text-end text-success fs-6">₹{{ booking.total_paid|floatformat:2|intcomma }}</td>
+                <td colspan="2" class="pe-4 text-end">
+                  <span class="small text-muted me-1">Remaining Balance:</span>
+                  <span class="{% if booking.balance_amount > 0 %}text-danger{% else %}text-success{% endif %} fs-6">
+                    ₹{{ booking.balance_amount|floatformat:2|intcomma }}
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-center py-4 px-3">
+          <i class="bi bi-wallet2 text-muted" style="font-size: 2.2rem;"></i>
+          <h6 class="fw-bold text-dark mt-2 mb-1">No Inward Payments Recorded</h6>
+          <p class="text-muted small mb-3">Record customer deposits, stage advances, or final completion payments.</p>
+          {% if not booking.is_cancelled %}
+            <button type="button" class="btn btn-sm btn-success text-white" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+              <i class="bi bi-cash-stack me-1"></i> Record Initial Payment
+            </button>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </details>
+
+  <!-- Detail Information Columns -->
+  <div class="row g-4">
+    <!-- Left Column: Customer & System Hardware -->
+    <div class="col-lg-6">
+      <!-- Customer Information Card -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h5>Site Location & Client</h5>
+            <small class="text-muted">Installation site location & contact</small>
+          </div>
+          <a href="{{ booking.customer.get_absolute_url }}" class="btn btn-sm btn-solar-outline">
+            Customer Profile <i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        </div>
+        <div class="card-body-clean">
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+            <div>
+              <h5 class="fw-bold mb-0 text-dark">{{ booking.customer.name }}</h5>
+              <div class="text-muted small font-monospace">{{ booking.customer.customer_id }} &bull; {{ booking.customer.get_customer_type_display }}</div>
+            </div>
+            <a href="tel:{{ booking.customer.phone }}" class="btn btn-sm btn-solar-outline">
+              <i class="bi bi-telephone-fill text-success me-1"></i> Call
+            </a>
+          </div>
+
+          <div class="row g-3 small">
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Consumer Number</span>
+              <span class="fw-semibold text-dark font-monospace">
+                {% if booking.consumer_number or booking.customer.consumer_number %}
+                  <span class="badge bg-light text-dark border px-2 py-1"><i class="bi bi-hash text-success me-0.5"></i>{{ booking.consumer_number|default:booking.customer.consumer_number }}</span>
+                {% else %}
+                  <span class="text-muted">Not Specified</span>
+                {% endif %}
+              </span>
+            </div>
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Phone Number</span>
+              <span class="fw-semibold text-dark">{{ booking.customer.phone }}</span>
+            </div>
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Email Address</span>
+              <span class="fw-semibold text-dark">{{ booking.customer.email|default:"None Provided" }}</span>
+            </div>
+            <div class="col-12">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Installation Site Address</span>
+              <span class="fw-medium text-dark">{{ booking.site_full_address }}</span>
+              {% if booking.site_map_url %}
+                <div class="mt-2">
+                  <a href="{{ booking.site_map_url }}" target="_blank" class="btn btn-sm btn-solar-outline py-1 px-2 text-primary" style="font-size: 0.8rem;">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Open in Google Maps {% if booking.site_location_url %}({{ booking.site_location_url }}){% endif %}
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solar System Hardware Specifications -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h5>Solar System Specifications</h5>
+            <small class="text-muted">Hardware models and contracted engineering capacity</small>
+          </div>
+          <span class="badge bg-light text-success border">{{ booking.system_capacity_kw }} kW Peak</span>
+        </div>
+        <div class="card-body-clean">
+          <ul class="list-group list-group-flush small">
+            {% if booking.panel_brand %}
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Panel Brand / Manufacturer</span>
+              <span class="fw-bold text-dark">{{ booking.panel_brand }}</span>
+            </li>
+            {% endif %}
+            {% if booking.panel_wattage %}
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Panel Wattage</span>
+              <span class="fw-bold text-dark">{{ booking.panel_wattage }} Wp</span>
+            </li>
+            {% endif %}
+            {% if booking.panel_tech %}
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Cell Technology</span>
+              <span class="fw-bold text-dark">{{ booking.panel_tech }}</span>
+            </li>
+            {% endif %}
+            {% if booking.panel_brand %}
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Panel Brand</span>
+              <span class="fw-bold text-dark">{{ booking.panel_brand }}</span>
+            </li>
+            {% endif %}
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Inverter Model</span>
+              <span class="fw-bold text-dark">{{ booking.inverter_type }}</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Total Panel Count</span>
+              <span class="fw-bold text-dark">{{ booking.number_of_panels }} Units</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between px-0 py-2 border-subtle">
+              <span class="text-muted">Mounting Structure</span>
+              <span class="fw-bold text-dark">{{ booking.get_installation_type_display }}</span>
+            </li>
+            <li class="list-group-item px-0 py-2 border-subtle">
+              <span class="text-muted d-block mb-1">Required Accessories & Safety Gear</span>
+              <span class="fw-medium text-dark">{{ booking.required_accessories|default:"Standard AC/DC DB, Earthing Rods & Surge Protection" }}</span>
+            </li>
+            {% if booking.additional_requirements %}
+              <li class="list-group-item px-0 py-2 border-subtle">
+                <span class="text-muted d-block mb-1">Additional Requirements</span>
+                <span class="fw-medium text-dark">{{ booking.additional_requirements }}</span>
+              </li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Logistics & Team Assignment -->
+      <div class="card-saas">
+        <div class="card-header-clean">
+          <h5>Logistics & Assigned Personnel</h5>
+          <i class="bi bi-truck text-muted"></i>
+        </div>
+        <div class="card-body-clean">
+          {% if booking.stage == 'SITE_SURVEY' and booking.survey_status != 'COMPLETED_FEASIBLE' %}
+            <div class="alert alert-warning py-2 px-3 small mb-3 border-0 d-flex align-items-center gap-2" style="background-color: #fffbeb; color: #b45309; border-radius: 6px;">
+              <i class="bi bi-info-circle-fill"></i>
+              <span><strong>Action Required:</strong> Conduct on-site technical inspection, verify roof structural integrity, and record shadow analysis to advance order to hardware installation.</span>
+            </div>
+          {% elif booking.survey_status == 'COMPLETED_FEASIBLE' %}
+            <div class="alert alert-success py-2 px-3 small mb-3 border-0 d-flex align-items-center gap-2" style="background-color: #ecfdf5; color: #047857; border-radius: 6px;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span><strong>Inspection Completed:</strong> Roof structural integrity and electrical interconnection verified feasible.</span>
+            </div>
+          {% endif %}
+          <div class="row g-3 small">
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Assigned Staff</span>
+              <div class="fw-bold text-dark mt-1"><i class="bi bi-person-badge text-primary me-1"></i>{{ booking.assigned_salesperson }}</div>
+            </div>
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Assigned Operations Team</span>
+              <div class="fw-bold text-dark mt-1"><i class="bi bi-people-fill text-warning me-1"></i>{% if booking.assigned_team %}{{ booking.assigned_team.name }}{% else %}{{ booking.assigned_team_driver|default:"Not Assigned Yet" }}{% endif %}</div>
+            </div>
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Expected Installation</span>
+              <div class="fw-medium text-dark mt-1">{{ booking.expected_installation_date|date:"M d, Y"|default:"Not Set" }}</div>
+            </div>
+            <div class="col-sm-6">
+              <span class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.72rem;">Expected Handover</span>
+              <div class="fw-medium text-dark mt-1">{{ booking.expected_completion_date|date:"M d, Y"|default:"Not Set" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documents & Site Photos Card -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="mb-0">Documents & Site Photos</h5>
+              <span class="badge rounded-pill bg-primary" style="font-size: 0.72rem;">{{ attachments.count }}</span>
+            </div>
+            <small class="text-muted">Roof surveys, Discom approvals, bills, and wiring photos</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#uploadAttachmentModal">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload File
+          </button>
+        </div>
+        <div class="card-body-clean">
+          {% if attachments %}
+            <div class="row g-3">
+              {% for att in attachments %}
+                <div class="col-sm-6">
+                  <div class="attachment-card p-3 rounded-3 border bg-white shadow-xs position-relative h-100 d-flex flex-column justify-content-between" style="border-color: #e2e8f0;">
+                    <div>
+                      <!-- Category & Actions Row -->
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="badge {{ att.category_badge_class }}" style="font-size: 0.68rem; font-weight: 600;">
+                          {{ att.get_category_display }}
+                        </span>
+                        <div class="dropdown">
+                          <button class="btn btn-link btn-sm text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical"></i>
+                          </button>
+                          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" style="font-size: 0.82rem;">
+                            <li>
+                              <a class="dropdown-item" href="{{ att.file.url }}" target="_blank" download>
+                                <i class="bi bi-download me-2 text-primary"></i> Download
+                              </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                              <form action="{% url 'bookings:attachment_delete' booking.pk att.pk %}" method="post" onsubmit="return confirm('Delete this file?');">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                  <i class="bi bi-trash3-fill me-2"></i> Delete
+                                </button>
+                              </form>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <!-- Thumbnail or File Icon -->
+                      {% if att.is_image %}
+                        <div class="position-relative overflow-hidden rounded-2 mb-2 bg-light text-center cursor-pointer attachment-thumb-wrap" style="height: 120px; cursor: pointer;" onclick="openPhotoViewer('{{ att.file.url }}', '{{ att.title|escapejs }}', '{{ att.get_category_display|escapejs }}')">
+                          <img src="{{ att.file.url }}" alt="{{ att.title }}" class="w-100 h-100 object-fit-cover rounded-2" style="object-fit: cover;">
+                          <div class="thumb-hover-overlay d-flex align-items-center justify-content-center">
+                            <span class="badge bg-dark bg-opacity-75 text-white"><i class="bi bi-zoom-in me-1"></i> Preview</span>
+                          </div>
+                        </div>
+                      {% else %}
+                        <a href="{{ att.file.url }}" target="_blank" class="text-decoration-none d-flex align-items-center justify-content-center rounded-2 mb-2 bg-light border text-center" style="height: 120px;">
+                          {% if att.is_pdf %}
+                            <i class="bi bi-file-earmark-pdf-fill text-danger" style="font-size: 3rem;"></i>
+                          {% else %}
+                            <i class="bi bi-file-earmark-text-fill text-primary" style="font-size: 3rem;"></i>
+                          {% endif %}
+                        </a>
+                      {% endif %}
+
+                      <!-- Title & Details -->
+                      <h6 class="fw-bold mb-1 text-dark text-truncate" title="{{ att.title }}" style="font-size: 0.88rem;">{{ att.title }}</h6>
+                      <div class="text-muted d-flex align-items-center justify-content-between" style="font-size: 0.74rem;">
+                        <span><i class="bi bi-hdd me-1"></i>{{ att.file_size_formatted }}</span>
+                        <span>{{ att.uploaded_at|date:"M d, Y" }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4 px-3 border border-dashed rounded-3 bg-light">
+              <i class="bi bi-images text-muted" style="font-size: 2.2rem;"></i>
+              <h6 class="fw-bold text-dark mt-2 mb-1">No Documents or Photos Uploaded</h6>
+              <p class="text-muted small mb-3">Upload site survey photos, structure reports, electricity bills, and Discom approvals.</p>
+              <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#uploadAttachmentModal">
+                <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload First Attachment
+              </button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Stage Inspection, Installation Progress, & Audit Log -->
+    <div class="col-lg-6">
+            <!-- Custom Project Specifications & Fields Card -->
+      <div class="card-saas mb-4" id="customFieldsCard">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="mb-0"><i class="bi bi-sliders2-vertical text-primary me-2"></i>Project Specifications & Custom Fields</h5>
+              <span class="badge rounded-pill bg-primary" id="customFieldsCountBadge" style="font-size: 0.72rem;">{{ custom_fields.count }}</span>
+            </div>
+            <small class="text-muted">Technical parameters, equipment metadata, site specs & custom key-values</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#addCustomFieldModal">
+            <i class="bi bi-plus-circle-fill me-1"></i> Add Field
+          </button>
+        </div>
+        <div class="card-body-clean">
+          <div id="customFieldsContainer">
+            {% if custom_fields %}
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="customFieldsTable" style="font-size: 0.85rem;">
+                  <thead class="table-light text-muted text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                    <tr>
+                      <th style="width: 38%;">Field Header</th>
+                      <th style="width: 47%;">Value</th>
+                      <th style="width: 15%; text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customFieldsTableBody">
+                    {% for field in custom_fields %}
+                      <tr id="custom-field-row-{{ field.pk }}">
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-light text-dark border px-2 py-1">
+                              <i class="bi bi-tag-fill text-primary me-1"></i>
+                              <strong class="field-label-text">{{ field.label }}</strong>
+                            </span>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="fw-semibold text-dark field-value-text">{{ field.value }}</span>
+                        </td>
+                        <td class="text-end">
+                          <button type="button" class="btn btn-xs btn-outline-primary me-1 edit-custom-field-btn"
+                                  data-id="{{ field.pk }}"
+                                  data-label="{{ field.label|escapejs }}"
+                                  data-value="{{ field.value|escapejs }}"
+                                  data-url="{% url 'bookings:custom_field_edit' booking.pk field.pk %}"
+                                  title="Edit field">
+                            <i class="bi bi-pencil-fill"></i>
+                          </button>
+                          <button type="button" class="btn btn-xs btn-outline-danger delete-custom-field-btn"
+                                  data-id="{{ field.pk }}"
+                                  data-label="{{ field.label|escapejs }}"
+                                  data-url="{% url 'bookings:custom_field_delete' booking.pk field.pk %}"
+                                  title="Delete field">
+                            <i class="bi bi-trash3-fill"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div id="customFieldsEmptyState" class="text-center py-4 px-3 border border-dashed rounded-3 bg-light">
+                <i class="bi bi-sliders2 text-muted" style="font-size: 2.2rem;"></i>
+                <h6 class="fw-bold text-dark mt-2 mb-1">No Custom Specifications Added</h6>
+                <p class="text-muted small mb-3">Add custom technical parameters like Battery Storage, Sanctioned Load, Phase Type, Roof Angle, Inverter Serial, or DISCOM details.</p>
+                <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#addCustomFieldModal">
+                  <i class="bi bi-plus-circle-fill me-1"></i> Add First Field
+                </button>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks & Action Items Card -->
+      <div class="card-saas mb-4">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="mb-0">
+              <i class="bi bi-check2-square text-primary me-2"></i>Tasks & Action Items
+            </h5>
+            <small class="text-muted">Installation checklist, permits, and operations follow-ups</small>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border px-2 py-1 small">
+              {{ booking.pending_tasks_count }} Pending / {{ booking.all_tasks_count }} Total
+            </span>
+            <button type="button" class="btn btn-xs btn-solar-primary py-1 px-2.5 shadow-xs" data-bs-toggle="modal" data-bs-target="#addBookingTaskModal">
+              <i class="bi bi-plus-lg me-1"></i> Add Task
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body-clean">
+          {% if booking_tasks %}
+            <div class="list-group list-group-flush">
+              {% for task in booking_tasks %}
+                <div class="list-group-item d-flex align-items-center justify-content-between px-0 py-2.5 border-subtle {% if task.is_completed %}opacity-60 bg-light-subtle{% endif %}" id="detail-task-item-{{ task.pk }}">
+                  <div class="d-flex align-items-center gap-2.5 overflow-hidden me-2">
+                    <input type="checkbox" class="form-check-input detail-task-toggle cursor-pointer flex-shrink-0" style="width: 18px; height: 18px;" data-task-id="{{ task.pk }}" data-url="{% url 'bookings:task_toggle' task.pk %}" {% if task.is_completed %}checked{% endif %} title="Toggle complete">
+                    <div class="overflow-hidden">
+                      <a href="{% url 'bookings:task_list' %}?task={{ task.pk }}" class="fw-semibold text-dark small detail-task-title text-decoration-none hover-text-primary d-inline-flex align-items-center gap-1 {% if task.is_completed %}text-decoration-line-through text-muted{% endif %}" title="Open full task details & checklist">
+                        <span>{{ task.title }}</span>
+                        <i class="bi bi-box-arrow-up-right opacity-40 ms-0.5" style="font-size: 0.68rem;"></i>
+                      </a>
+                      <div class="d-flex align-items-center gap-2 text-muted mt-0.5" style="font-size: 0.72rem;">
+                        {% if task.is_completed %}
+                          <span class="badge rounded-1 bg-success-subtle text-success border border-success-subtle py-0.5 px-1.5 fw-medium task-status-pill">
+                            <i class="bi bi-check-circle-fill me-0.5"></i>Completed
+                          </span>
+                          <span class="task-completed-info text-success fw-medium d-inline-flex align-items-center gap-1" style="font-size: 0.72rem;">
+                            <i class="bi bi-person-check-fill text-success"></i>Completed by <strong class="text-dark">{{ task.completed_by_name }}</strong>{% if task.completed_at %} on {{ task.completed_at|date:"M d, Y, h:i A" }}{% endif %}
+                          </span>
+                        {% elif task.status == 'IN_PROGRESS' %}
+                          <span class="badge rounded-1 border py-0.5 px-1.5 fw-medium task-status-pill" style="font-size: 0.68rem; background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe !important;">
+                            <i class="bi bi-hourglass-split me-0.5"></i>In Progress
+                          </span>
+                          <span class="task-completed-info text-success fw-medium d-none align-items-center gap-1" style="font-size: 0.72rem;"></span>
+                        {% else %}
+                          <span class="badge rounded-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0.5 px-1.5 fw-medium task-status-pill">
+                            <i class="bi bi-arrow-counterclockwise me-0.5"></i>To Do
+                          </span>
+                          <span class="task-completed-info text-success fw-medium d-none align-items-center gap-1" style="font-size: 0.72rem;"></span>
+                        {% endif %}
+
+                        {% if task.is_high_priority %}
+                          <span class="badge rounded-1 bg-danger-subtle text-danger border border-danger-subtle fw-semibold py-0.5 px-1.5" style="font-size: 0.65rem;">
+                            <i class="bi bi-lightning-charge-fill me-0.5 text-danger"></i>High
+                          </span>
+                        {% endif %}
+                        {% if task.has_checklist %}
+                          <span class="badge rounded-1 bg-primary-subtle text-primary border border-primary-subtle font-monospace py-0.5 px-1.5" style="font-size: 0.65rem;" title="{{ task.checklist_completed_count }}/{{ task.checklist_total }} subtasks">
+                            <i class="bi bi-check2-all me-0.5"></i>{{ task.checklist_completed_count }}/{{ task.checklist_total }}
+                          </span>
+                        {% endif %}
+                        {% if task.due_date %}
+                          <span class="{% if task.is_overdue %}text-danger fw-bold{% endif %}">
+                            <i class="bi bi-calendar3 me-0.5 opacity-75"></i>Due: {{ task.due_date|date:"M d, Y" }}
+                          </span>
+                        {% endif %}
+                        {% if task.assigned_to %}
+                          <span><i class="bi bi-person me-0.5"></i>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                        {% endif %}
+                      </div>
+                      {% if task.has_checklist %}
+                        <div class="mt-2 pt-1 border-top border-light-subtle">
+                          <div class="d-flex flex-column gap-1">
+                            {% for item in task.checklist_items_all %}
+                              <div class="d-flex align-items-center gap-1.5 small text-secondary" style="font-size: 0.72rem;">
+                                <input class="form-check-input detail-checklist-toggle cursor-pointer m-0 flex-shrink-0"
+                                       type="checkbox"
+                                       {% if item.is_completed %}checked{% endif %}
+                                       data-toggle-url="{% url 'bookings:checklist_toggle' item.pk %}"
+                                       id="detail-chk-{{ item.pk }}"
+                                       style="width: 13px; height: 13px;">
+                                <label class="form-check-label cursor-pointer {% if item.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}"
+                                       for="detail-chk-{{ item.pk }}">
+                                  {{ item.title }}
+                                </label>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-2">
+                    <!-- Status Dropdown Menu -->
+                    <div class="dropdown d-inline">
+                      <button class="btn btn-xs btn-link text-muted p-0 opacity-40 hover-opacity-100 text-decoration-none dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Change status">
+                        <i class="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end shadow-sm border py-1" style="font-size: 0.74rem; min-width: 140px; border-radius: 8px;">
+                        <li><a class="dropdown-item py-1.5 detail-status-action" href="#" data-task-id="{{ task.pk }}" data-status="PENDING"><i class="bi bi-record-circle me-1.5 text-primary"></i>Set To Do</a></li>
+                        <li><a class="dropdown-item py-1.5 detail-status-action" href="#" data-task-id="{{ task.pk }}" data-status="IN_PROGRESS"><i class="bi bi-hourglass-split me-1.5" style="color: #7c3aed;"></i>Set In Progress</a></li>
+                        <li><a class="dropdown-item py-1.5 detail-status-action" href="#" data-task-id="{{ task.pk }}" data-status="COMPLETED"><i class="bi bi-check2-circle me-1.5 text-success"></i>Mark Completed</a></li>
+                      </ul>
+                    </div>
+                    <form method="post" action="{% url 'bookings:task_delete' task.pk %}" onsubmit="return confirm('Delete this task?');" class="d-inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-link text-danger p-0 opacity-40 hover-opacity-100" title="Delete Task">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-3 text-muted small">
+              <i class="bi bi-check2-circle fs-3 d-block mb-1 text-secondary opacity-50"></i>
+              No action items assigned to this project yet.
+              <div class="mt-2">
+                <button type="button" class="btn btn-sm btn-solar-outline" data-bs-toggle="modal" data-bs-target="#addBookingTaskModal">
+                  <i class="bi bi-plus-lg me-1"></i>Create First Action Item
+                </button>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Sticky Notes & Internal Remarks Card -->
+      <div class="card-saas mb-4" id="stickyNotesContainer">
+        <div class="card-header-clean d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="mb-0 d-flex align-items-center gap-2">
+              <span class="badge p-1.5 rounded-2" style="background: #fef08a; color: #854d0e; font-size: 0.95rem;">
+                <i class="bi bi-sticky-fill"></i>
+              </span>
+              <span>Project Sticky Notes</span>
+            </h5>
+            <small class="text-muted">Quick team remarks, customer preferences, and crew instructions</small>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-light text-dark border px-2.5 py-1 small fw-semibold" id="stickyNotesCountBadge">
+              {{ notes_list|length }} Note{{ notes_list|length|pluralize }}
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body-clean p-4">
+          <!-- Windows Sticky Note Composer -->
+          <div class="sticky-composer-card p-3 rounded-4 mb-4 shadow-sm" id="stickyComposer" style="background: #fefce8; border: 2px solid #fde047; transition: all 0.2s ease;">
+            <form action="{% url 'bookings:add_note' booking.pk %}" method="post" id="stickyNoteForm">
+              {% csrf_token %}
+              <input type="hidden" name="category" id="stickyColorInput" value="YELLOW">
+              <textarea name="note_text" id="stickyNoteHiddenText" class="d-none"></textarea>
+
+              <!-- Top bar of Sticky Note Creator -->
+              <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom border-warning-subtle">
+                <!-- Color dots -->
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-secondary small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.04em;">Color:</span>
+                  <div class="sticky-color-palette d-flex align-items-center gap-1.5">
+                    <button type="button" class="color-dot active" data-color="YELLOW" data-bg="#fefce8" data-border="#fde047" title="Canary Yellow" style="background: #fef08a; border: 2px solid #ca8a04; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;"></button>
+                    <button type="button" class="color-dot" data-color="GREEN" data-bg="#f0fdf4" data-border="#86efac" title="Fresh Mint" style="background: #bbf7d0; border: 2px solid transparent; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;"></button>
+                    <button type="button" class="color-dot" data-color="BLUE" data-bg="#f0f9ff" data-border="#7dd3fc" title="Sky Blue" style="background: #bae6fd; border: 2px solid transparent; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;"></button>
+                    <button type="button" class="color-dot" data-color="PURPLE" data-bg="#faf5ff" data-border="#d8b4fe" title="Lavender" style="background: #e9d5ff; border: 2px solid transparent; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;"></button>
+                    <button type="button" class="color-dot" data-color="PINK" data-bg="#fff1f2" data-border="#fecdd3" title="Blush Rose" style="background: #fecdd3; border: 2px solid transparent; width: 22px; height: 22px; border-radius: 50%; cursor: pointer;"></button>
+                  </div>
+                </div>
+
+                <!-- Pin to top toggle -->
+                <div class="form-check form-switch mb-0 d-inline-flex align-items-center gap-1">
+                  <input class="form-check-input cursor-pointer" type="checkbox" name="is_pinned" id="id_note_pinned" style="cursor: pointer;">
+                  <label class="form-check-label small fw-semibold text-secondary cursor-pointer" for="id_note_pinned" style="font-size: 0.78rem; cursor: pointer;">
+                    <i class="bi bi-pin-angle-fill text-warning me-0.5"></i> Pin Note
+                  </label>
+                </div>
+              </div>
+
+              <!-- ContentEditable Sticky Note Paper -->
+              <div class="sticky-editable-paper p-3 rounded-3 mb-2" id="stickyEditable"
+                   contenteditable="true"
+                   role="textbox"
+                   aria-multiline="true"
+                   data-placeholder="Write a sticky note... Use bold, underline, or bulleted sub-items below"
+                   style="min-height: 100px; max-height: 280px; overflow-y: auto; outline: none; font-size: 0.92rem; line-height: 1.55; color: #1e293b; background: rgba(255,255,255,0.75); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;"></div>
+
+              <!-- Bottom Formatting Toolbar (Windows Sticky Notes toolbar) -->
+              <div class="d-flex align-items-center justify-content-between pt-1 flex-wrap gap-2">
+                <div class="sticky-format-toolbar d-flex align-items-center gap-1 bg-white px-2 py-1 rounded-2 border shadow-2xs">
+                  <button type="button" class="btn btn-sm btn-light p-1 px-2 border-0 fw-bold format-btn" data-cmd="bold" title="Bold (Ctrl+B)">
+                    <span style="font-size: 0.88rem; font-weight: 800;">B</span>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-light p-1 px-2 border-0 fst-italic format-btn" data-cmd="italic" title="Italic (Ctrl+I)">
+                    <span style="font-size: 0.88rem; font-style: italic;">I</span>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-light p-1 px-2 border-0 text-decoration-underline format-btn" data-cmd="underline" title="Underline (Ctrl+U)">
+                    <span style="font-size: 0.88rem; text-decoration: underline;">U</span>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-light p-1 px-2 border-0 text-decoration-line-through format-btn" data-cmd="strikeThrough" title="Strikethrough">
+                    <span style="font-size: 0.88rem; text-decoration: line-through;">S</span>
+                  </button>
+                  <div class="vr mx-1" style="height: 18px;"></div>
+                  <button type="button" class="btn btn-sm btn-light p-1 px-2 border-0 format-btn" data-cmd="insertUnorderedList" title="Bulleted Sub-items">
+                    <i class="bi bi-list-ul" style="font-size: 0.95rem;"></i>
+                  </button>
+                </div>
+
+                <button type="submit" class="btn btn-sm px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" id="btnSubmitStickyNote" style="background: #0f172a; color: #ffffff; border-radius: 8px; font-size: 0.83rem;">
+                  <i class="bi bi-plus-circle-fill text-warning"></i>
+                  <span>Post Sticky Note</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Sticky Notes Board / Grid of Existing Notes -->
+          {% if notes_list %}
+            <div class="sticky-notes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1.15rem; align-items: start;">
+              {% for n in notes_list %}
+                <div class="sticky-note-item rounded-4 p-3 position-relative shadow-sm transition-all"
+                     style="background: {{ n.color_theme.bg }}; border: 2px solid {{ n.color_theme.border }}; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;">
+                  <!-- Top Bar -->
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-1.5 border-bottom" style="border-color: {{ n.color_theme.border }} !important;">
+                      <div class="d-flex align-items-center gap-1.5">
+                        {% if n.is_pinned %}
+                          <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 shadow-2xs" style="font-size: 0.7rem; font-weight: 700;">
+                            <i class="bi bi-pin-angle-fill text-danger"></i> Pinned
+                          </span>
+                        {% else %}
+                          <span class="text-muted opacity-75" style="font-size: 0.85rem;"><i class="bi bi-pin-angle"></i></span>
+                        {% endif %}
+                        <span class="text-muted" style="font-size: 0.72rem;">{{ n.created_at|date:"M d, Y h:i A" }}</span>
+                      </div>
+                      <form action="{% url 'bookings:delete_note' booking.pk n.pk %}" method="post" class="d-inline" onsubmit="return confirm('Delete this sticky note?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link btn-xs text-muted p-0 hover-danger opacity-75" title="Delete Sticky Note" style="transition: opacity 0.15s;">
+                          <i class="bi bi-trash3 fs-6"></i>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Note Content with Rich Text Styling -->
+                    <div class="sticky-note-body mb-3" style="font-size: 0.88rem; line-height: 1.55; color: #1e293b; word-break: break-word;">
+                      {{ n.note_text|safe }}
+                    </div>
+                  </div>
+
+                  <!-- Author Footer -->
+                  <div class="pt-2 border-top d-flex align-items-center justify-content-between" style="border-color: rgba(0,0,0,0.06) !important; font-size: 0.73rem;">
+                    <div class="d-flex align-items-center gap-1.5 text-muted">
+                      <span class="rounded-circle bg-white border text-dark fw-bold d-inline-flex align-items-center justify-content-center shadow-2xs" style="width: 20px; height: 20px; font-size: 0.65rem;">
+                        {{ n.author_name|slice:":1"|upper|default:"S" }}
+                      </span>
+                      <span>By <strong class="text-dark">{{ n.author_name }}</strong></span>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4 text-muted small rounded-3 bg-light border border-dashed">
+              <i class="bi bi-sticky fs-2 d-block mb-1 text-warning opacity-75"></i>
+              No sticky notes yet. Type in the yellow note pad above to leave your first project note!
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Audit History & Activity Timeline -->
+      <div class="card-saas">
+        <div class="card-header-clean">
+          <div>
+            <h5>Activity & Audit Timeline</h5>
+            <small class="text-muted">Tracked lifecycle transitions with timestamps</small>
+          </div>
+          <i class="bi bi-clock-history text-muted"></i>
+        </div>
+        <div class="card-body-clean">
+          <div class="audit-timeline custom-scrollbar" style="max-height: 480px; overflow-y: auto; padding-right: 8px;">
+            {% for log in audit_logs %}
+              <div class="timeline-item {% if log.action == 'CANCELLED' %}cancelled{% endif %}">
+                <div class="timeline-bullet"></div>
+                <div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <strong class="text-dark small">{{ log.get_action_display }}</strong>
+                    <span class="text-muted" style="font-size: 0.72rem;">{{ log.timestamp|date:"M d, Y H:i" }}</span>
+                  </div>
+                  <div class="text-muted small">
+                    By <strong>{{ log.user_name }}</strong>
+                    {% if log.to_stage %}
+                      &bull; Stage: <span class="badge bg-light text-dark border">{{ log.to_stage }}</span>
+                    {% endif %}
+                  </div>
+                  {% if log.notes %}
+                    <div class="p-2 bg-light rounded-3 mt-1 small text-secondary border">
+                      {{ log.notes }}
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            {% empty %}
+              <div class="text-muted small text-center py-3">No activity logs recorded yet.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Redesigned Change Project Status Modal -->
+<div class="modal fade" id="changeStatusModal" tabindex="-1" aria-labelledby="changeStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 540px;">
+    <div class="modal-content border-0 shadow-xl position-relative overflow-hidden" style="border-radius: 16px;">
+      
+      <!-- Top Subtle Gradient Accent Bar -->
+      <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%);"></div>
+
+      <form action="{% url 'bookings:advance_stage' booking.pk %}" method="post" id="changeProjectStatusForm">
+        {% csrf_token %}
+
+        <!-- Modal Header -->
+        <div class="modal-header border-bottom px-4 pt-4 pb-3 bg-white">
+          <div class="d-flex align-items-center gap-2.5">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;">
+              <i class="bi bi-arrow-repeat fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0 font-heading" id="changeStatusModalLabel" style="font-size: 1.05rem; letter-spacing: -0.01em;">Change Project Status</h5>
+              <div class="text-muted" style="font-size: 0.76rem;">Select milestone transition for order <span class="fw-bold font-monospace text-dark">#{{ booking.booking_ref }}</span></div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body px-4 py-3 bg-white">
+          <!-- From -> To Transition Banner -->
+          <div class="d-flex align-items-center justify-content-between p-3 mb-3.5 rounded-3 border" style="background: #f8fafc; border-color: #e2e8f0 !important;">
+            <div class="d-flex align-items-center gap-1.5 overflow-hidden">
+              <span class="text-muted fw-bold" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;">CURRENT:</span>
+              <span class="badge py-1.5 px-2.5 rounded-pill fw-semibold d-inline-flex align-items-center gap-1.5 text-truncate" style="background: {{ booking.stage_info.bg_header|default:'#f1f5f9' }}; color: {{ booking.stage_info.header_text|default:'#334155' }}; border: 1px solid {{ booking.stage_info.border_color|default:'#cbd5e1' }}; font-size: 0.76rem;">
+                <i class="bi {{ booking.stage_info.icon|default:'bi-circle-fill' }}"></i>
+                <span>{{ booking.get_stage_display }}</span>
+              </span>
+            </div>
+            <div class="rounded-circle bg-white border shadow-2xs d-flex align-items-center justify-content-center flex-shrink-0" style="width: 28px; height: 28px; color: #059669;">
+              <i class="bi bi-arrow-right fw-bold"></i>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 overflow-hidden">
+              <span class="text-muted fw-bold" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;">MOVE TO:</span>
+              <span class="badge py-1.5 px-3 rounded-pill fw-bold d-inline-flex align-items-center gap-1.5 text-white shadow-2xs text-truncate" id="statusModalTargetBadge" style="background: {{ default_target_stage.color|default:'#059669' }}; font-size: 0.76rem;">
+                <i class="bi {{ default_target_stage.icon|default:'bi-circle' }}"></i>
+                <span>{{ default_target_stage.name }}</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Stage Selection Grid -->
+          <div class="mb-3.5">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <label class="form-label fw-bold text-dark mb-0 d-flex align-items-center gap-1.5" style="font-size: 0.82rem;">
+                <i class="bi bi-diagram-3 text-secondary"></i>
+                <span>Available Milestones</span>
+              </label>
+              <span class="badge bg-light text-secondary border fw-medium" style="font-size: 0.7rem;">{{ status_options|length }} Stages</span>
+            </div>
+
+            <div class="stage-option-list d-flex flex-column gap-2" style="max-height: 290px; overflow-y: auto; padding-right: 4px;">
+              {% for stage in status_options %}
+                <label class="stage-option-tile d-flex align-items-center justify-content-between p-2.5 rounded-3 border transition-all cursor-pointer {% if forloop.first %}selected-stage-tile{% endif %}"
+                       for="stage_opt_{{ stage.code }}"
+                       data-stage-code="{{ stage.code }}"
+                       data-stage-name="{{ stage.name }}"
+                       data-stage-icon="{{ stage.icon|default:'bi-circle' }}"
+                       data-stage-color="{{ stage.color|default:'#059669' }}"
+                       style="cursor: pointer; transition: all 0.15s ease; border-color: {% if forloop.first %}#059669{% else %}#e2e8f0{% endif %}; background: {% if forloop.first %}#f0fdf4{% else %}#ffffff{% endif %};">
+                  <div class="d-flex align-items-center gap-2.5 overflow-hidden">
+                    <input type="radio"
+                           id="stage_opt_{{ stage.code }}"
+                           name="target_stage"
+                           value="{{ stage.code }}"
+                           class="d-none stage-radio-input"
+                           {% if forloop.first %}checked{% endif %}
+                           required>
+                    <!-- Custom Bullet Radio -->
+                    <div class="stage-radio-bullet rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width: 20px; height: 20px; border: 2px solid {% if forloop.first %}#059669{% else %}#cbd5e1{% endif %}; background: {% if forloop.first %}#059669{% else %}#ffffff{% endif %};">
+                      <div class="bullet-dot rounded-circle bg-white" style="width: 8px; height: 8px; display: {% if forloop.first %}block{% else %}none{% endif %};"></div>
+                    </div>
+                    <!-- Stage Icon Circle -->
+                    <div class="stage-icon-circle rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width: 34px; height: 34px; background: {{ stage.color }}18; color: {{ stage.color }}; border: 1px solid {{ stage.color }}35;">
+                      <i class="bi {{ stage.icon|default:'bi-circle' }}" style="font-size: 0.9rem;"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                      <div class="fw-bold text-dark stage-name-text text-truncate" style="font-size: 0.86rem; line-height: 1.25;">{{ stage.name }}</div>
+                      <div class="text-muted text-truncate" style="font-size: 0.71rem;">Milestone {{ stage.order }}{% if stage.is_terminal %} &bull; Final Delivery{% endif %}</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-2">
+                    {% if stage.is_next %}
+                      <span class="badge rounded-pill fw-semibold" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.68rem;">
+                        <i class="bi bi-star-fill text-warning me-1"></i>Recommended
+                      </span>
+                    {% elif stage.is_terminal %}
+                      <span class="badge rounded-pill bg-light text-secondary border" style="font-size: 0.68rem;">Final</span>
+                    {% elif not stage.is_forward %}
+                      <span class="badge rounded-pill bg-light text-muted border" style="font-size: 0.66rem;">
+                        <i class="bi bi-arrow-counterclockwise me-0.5"></i>Rollback
+                      </span>
+                    {% endif %}
+                  </div>
+                </label>
+              {% empty %}
+                <div class="p-3 text-center text-muted small bg-light rounded-2 border">No alternate stages available in pipeline.</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Update Note -->
+          <div class="mb-1">
+            <label for="statusNotes" class="form-label fw-bold text-dark mb-1 d-flex align-items-center gap-1.5" style="font-size: 0.8rem;">
+              <i class="bi bi-chat-left-text text-secondary"></i>
+              <span>Status Update Remarks</span>
+              <span class="text-muted fw-normal ms-1" style="font-size: 0.72rem;">(Optional)</span>
+            </label>
+            <textarea id="statusNotes" name="notes" class="form-control" rows="2" style="font-size: 0.82rem; border-radius: 8px; border-color: #cbd5e1;" placeholder="Add handover remarks, inspection notes, or reason for this status update..."></textarea>
+            <div class="form-text mt-1 text-muted" style="font-size: 0.7rem;"><i class="bi bi-info-circle me-1"></i>Recorded into this project's activity timeline.</div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer border-top px-4 py-3 bg-light bg-opacity-50 d-flex align-items-center justify-content-between">
+          <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-medium" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary btn-sm px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" id="btnSubmitStatusUpdate">
+            <i class="bi bi-check2-circle fs-6"></i>
+            <span id="btnSubmitStatusText">Update to {{ default_target_stage.name|default:"Selected Stage" }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 1: Advance Stage Workflow Modal -->
+<div class="modal fade" id="advanceModal" tabindex="-1" aria-labelledby="advanceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold" id="advanceModalLabel">
+          {% if booking.stage == 'NEW' %}
+            <i class="bi bi-geo-alt-fill text-warning me-2"></i>Advance to Stage 2: Site Survey
+          {% elif booking.stage == 'SITE_SURVEY' %}
+            <i class="bi bi-tools text-primary me-2"></i>Advance to Stage 3: Installation
+          {% elif booking.stage == 'INSTALLATION' %}
+            <i class="bi bi-check2-circle text-success me-2"></i>Advance to Stage 4: Completion
+          {% else %}
+            <i class="bi bi-arrow-right-circle-fill text-primary me-2"></i>Advance Project Milestone
+          {% endif %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'bookings:advance_stage' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <input type="hidden" name="target_stage" value="{{ booking.next_stage }}">
+          {% if booking.stage == 'NEW' %}
+            <p class="text-muted small mb-3">Schedule the technical inspection and assign the qualified solar engineer.</p>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-7">
+                <label class="form-label">Site Visit Date <span class="text-danger">*</span></label>
+                <input type="date" name="survey_scheduled_date" class="form-control" required value="{% now 'Y-m-d' %}">
+              </div>
+              <div class="col-sm-5">
+                <label class="form-label">Visit Time</label>
+                <input type="time" name="survey_time" class="form-control" value="{% now 'H:i' %}">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Survey Team / Inspector</label>
+              <input type="text" name="survey_team_driver" class="form-control" value="{{ booking.assigned_team_driver }}" placeholder="e.g. Inspector Marcus & Driver John">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Pre-Survey Instructions / Notes</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Enter special instructions, gate codes, or pre-survey checklist..."></textarea>
+            </div>
+
+          {% elif booking.stage == 'SITE_SURVEY' %}
+            <p class="text-muted small mb-3">Confirm survey feasibility and schedule the installation crew.</p>
+            <div class="mb-3">
+              <label class="form-label">Roof Measurements & Structural Findings <span class="text-danger">*</span></label>
+              <input type="text" name="survey_roof_measurements" class="form-control" required placeholder="e.g. 520 sq.ft South Facing, RCC roof, Zero Shadow" value="{{ booking.survey_roof_measurements|default:'' }}">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Survey Evaluation Status</label>
+              <select name="survey_status" class="form-select">
+                <option value="COMPLETED_FEASIBLE" selected>Completed - Feasible for Solar</option>
+                <option value="NEEDS_REINFORCEMENT">Completed - Structure Reinforcement Required</option>
+              </select>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-7">
+                <label class="form-label">Installation Scheduled Date <span class="text-danger">*</span></label>
+                <input type="date" name="installation_scheduled_date" class="form-control" required value="{% now 'Y-m-d' %}">
+              </div>
+              <div class="col-sm-5">
+                <label class="form-label">Start Time</label>
+                <input type="time" name="installation_time" class="form-control" value="{% now 'H:i' %}">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Expected Completion Date</label>
+              <input type="date" name="expected_completion_date" class="form-control" value="{{ booking.expected_completion_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Installation Crew & Lead Technician</label>
+              <input type="text" name="installation_team" class="form-control" value="{{ booking.assigned_team_driver }}" placeholder="e.g. Apex Solar Crew Alpha">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Stage Transition Notes</label>
+              <textarea name="notes" class="form-control" rows="2" placeholder="Roof is structurally sound, cables mapped..."></textarea>
+            </div>
+
+          {% elif booking.stage == 'INSTALLATION' %}
+            <p class="text-muted small mb-3">Finalize project commissioning, warranty issuance, and balance collection.</p>
+            <div class="row g-2 mb-3">
+              <div class="col-sm-7">
+                <label class="form-label">Actual Completion Date <span class="text-danger">*</span></label>
+                <input type="date" name="actual_completion_date" class="form-control" required value="{% now 'Y-m-d' %}">
+              </div>
+              <div class="col-sm-5">
+                <label class="form-label">Completion Time</label>
+                <input type="time" name="completion_time" class="form-control" value="{% now 'H:i' %}">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Final Payment Received (₹)</label>
+              <input type="number" step="0.01" name="final_payment_received" class="form-control" value="{{ booking.balance_amount }}" placeholder="0.00">
+              <div class="form-text small">Outstanding balance is ₹{{ booking.balance_amount|floatformat:2|intcomma }}. Enter amount paid at handover.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold small text-secondary">
+                Net Metering Status <span class="text-danger">*</span>
+              </label>
+              <select name="net_metering_status" class="form-select" id="id_net_metering_status" required>
+                <option value="Application Submitted" {% if booking.net_metering_status == 'Application Submitted' %}selected{% endif %}>Application Submitted to DISCOM</option>
+                <option value="Feasibility Approved" {% if booking.net_metering_status == 'Feasibility Approved' %}selected{% endif %}>Feasibility / DISCOM Sanction Approved</option>
+                <option value="WCR Submitted" {% if booking.net_metering_status == 'WCR Submitted' %}selected{% endif %}>Work Completion Report (WCR) Submitted</option>
+                <option value="Inspection Completed" {% if booking.net_metering_status == 'Inspection Completed' %}selected{% endif %}>DISCOM Site Inspection Completed</option>
+                <option value="Bi-directional Meter Installed & Grid Synchronized" {% if not booking.net_metering_status or booking.net_metering_status == 'Bi-directional Meter Installed & Grid Synchronized' %}selected{% endif %}>Bi-directional Meter Installed & Grid Synchronized</option>
+                <option value="Grid Active & Solar Export Operational" {% if booking.net_metering_status == 'Grid Active & Solar Export Operational' %}selected{% endif %}>Grid Active & Solar Export Operational</option>
+                <option value="Meter Installed & Grid Active" {% if booking.net_metering_status == 'Meter Installed & Grid Active' %}selected{% endif %}>Meter Installed & Grid Active</option>
+                <option value="Not Applicable (Off-Grid / Zero Export)" {% if booking.net_metering_status == 'Not Applicable (Off-Grid / Zero Export)' %}selected{% endif %}>Not Applicable (Off-Grid / Zero Export)</option>
+              </select>
+              <div class="form-text small">Select DISCOM net metering & grid synchronization status.</div>
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" name="warranty_certificate_issued" id="id_warranty_check" checked>
+              <label class="form-check-label fw-bold small text-dark" for="id_warranty_check">
+                Issue 25-Year System Warranty Certificate
+              </label>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Commissioning & Handover Notes</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Inverter tested, customer walkthrough completed, handover signed..."></textarea>
+            </div>
+          {% else %}
+            <p class="text-muted small mb-3">Advance project to the next active pipeline stage.</p>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-secondary">Stage Transition Notes / Instructions</label>
+              <textarea name="notes" class="form-control" rows="3" placeholder="Enter notes or updates for this milestone..."></textarea>
+            </div>
+          {% endif %}
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary">
+            <i class="bi bi-check-circle-fill me-1"></i> Confirm & Advance Stage
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2: Update Progress Modal (Stage 3) -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <h5 class="modal-title fw-bold" id="progressModalLabel">
+          <i class="bi bi-sliders text-primary me-2"></i>Update Installation Progress
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'bookings:update_progress' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label">Progress Percentage (0-100%)</label>
+            <div class="input-group">
+              <input type="number" min="0" max="100" name="installation_progress" class="form-control fs-5 fw-bold" value="{{ booking.installation_progress }}" required>
+              <span class="input-group-text bg-light fw-bold">%</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Daily Progress Remarks & Milestones</label>
+            <textarea name="progress_notes" class="form-control" rows="3" placeholder="e.g. Structure mounting finished. Inverter wiring in progress..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary">Save Progress Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3: Cancel Booking Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header bg-danger-subtle p-4 border-bottom">
+        <h5 class="modal-title text-danger fw-bold" id="cancelModalLabel">
+          <i class="bi bi-exclamation-octagon-fill me-2"></i>Cancel Solar Booking
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'bookings:cancel' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <p class="small text-muted mb-3">
+            Are you sure you want to cancel booking <strong>{{ booking.booking_ref }}</strong>? This will remove the booking from active stages and flag it as cancelled.
+          </p>
+          <div class="mb-3">
+            <label class="form-label">Cancellation Category <span class="text-danger">*</span></label>
+            <select name="cancellation_category" class="form-select" required>
+              <option value="" selected disabled>Select reason category</option>
+              {% for value, label in booking.CANCELLATION_CATEGORY_CHOICES %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Cancellation Reason <span class="text-danger">*</span></label>
+            <textarea name="cancellation_reason" class="form-control" rows="3" placeholder="Enter why this order is being cancelled..." required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Keep Booking</button>
+          <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Reopen uses the saved pre-cancellation stage and records why work resumed. -->
+<div class="modal fade" id="reopenModal" tabindex="-1" aria-labelledby="reopenModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <form action="{% url 'bookings:reopen' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-header border-bottom p-4">
+          <h5 class="modal-title fw-bold" id="reopenModalLabel"><i class="bi bi-arrow-counterclockwise text-success me-2"></i>Reopen Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <p class="small text-muted">This order will return to its previous project status: <strong>{{ booking.get_stage_display }}</strong>.</p>
+          <label for="reopenReason" class="form-label">Reason for reopening <span class="text-muted">(optional)</span></label>
+          <textarea id="reopenReason" name="reopen_reason" class="form-control" rows="3" placeholder="Customer confirmed, revised quote approved, issue resolved..."></textarea>
+        </div>
+        <div class="modal-footer border-top p-3">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Keep Cancelled</button>
+          <button type="submit" class="btn btn-solar-primary"><i class="bi bi-check-circle-fill me-1"></i>Reopen Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 4: Upload Attachment Modal with Live Upload Progress Percentage -->
+<div class="modal fade" id="uploadAttachmentModal" tabindex="-1" aria-labelledby="uploadAttachmentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <div>
+          <h5 class="modal-title fw-bold mb-1" id="uploadAttachmentModalLabel">
+            <i class="bi bi-cloud-arrow-up-fill text-success me-2"></i>Upload Project Document or Site Photo
+          </h5>
+          <small class="text-muted">Upload site photos, test reports, diagrams, or DISCOM approvals</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="uploadModalCloseBtn"></button>
+      </div>
+      <form id="uploadAttachmentForm" action="{% url 'bookings:attachment_upload' booking.pk %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="category" value="OTHER" id="id_attachment_category_val">
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Document Title / Description <span class="text-danger">*</span></label>
+            <input type="text" name="title" id="id_attachment_title" class="form-control" placeholder="e.g. South Roof Angle Photo, Discom Sanction Letter, KSEB Bill" required>
+            <div class="form-text small">Enter a title or it will autofill when selecting a file.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Select File or Photo <span class="text-danger">*</span></label>
+            <input type="file" name="file" id="id_attachment_file" class="form-control" required accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+            <div class="form-text small">Accepts JPG, PNG, WEBP, PDF, DOCX (Max 25MB)</div>
+          </div>
+
+          <!-- File details badge -->
+          <div id="fileSelectionPreview" class="d-none alert alert-light border d-flex align-items-center justify-content-between p-2 mb-3">
+            <div class="d-flex align-items-center gap-2 overflow-hidden me-2">
+              <i class="bi bi-file-earmark-check-fill text-success fs-4"></i>
+              <div class="overflow-hidden">
+                <div class="fw-bold text-dark text-truncate small" id="previewFileName">filename.png</div>
+                <div class="text-muted" style="font-size: 0.72rem;" id="previewFileSize">0 KB</div>
+              </div>
+            </div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle">Ready to Upload</span>
+          </div>
+
+          <!-- Upload Progress & Status -->
+          <div id="uploadProgressSection" class="d-none mt-3 p-3 bg-light rounded-3 border">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-bold small text-dark d-flex align-items-center gap-2" id="uploadStatusText">
+                <span class="spinner-border spinner-border-sm text-primary" id="uploadSpinner" role="status"></span>
+                <i class="bi bi-check-circle-fill text-success fs-5 d-none" id="uploadDoneIcon"></i>
+                <span id="uploadStatusLabel">Uploading file...</span>
+              </span>
+              <span class="badge bg-primary fs-6 px-2.5 py-1" id="uploadPercentBadge">0%</span>
+            </div>
+            <div class="progress mb-2" style="height: 12px; border-radius: 6px; background-color: #e2e8f0;">
+              <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="uploadProgressBar" role="progressbar" style="width: 0%; transition: width 0.15s ease;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
+              <span id="uploadBytesInfo">0 MB / 0 MB</span>
+              <span id="uploadRemainingInfo">Uploading...</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3 bg-light">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal" id="uploadCancelBtn">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary" id="uploadSubmitBtn">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Now
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Custom Field / Parameter -->
+<div class="modal fade" id="addCustomFieldModal" tabindex="-1" aria-labelledby="addCustomFieldModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <div>
+          <h5 class="modal-title fw-bold text-dark mb-1" id="addCustomFieldModalLabel">
+            <i class="bi bi-sliders2-vertical text-primary me-2"></i>Add Custom Project Field
+          </h5>
+          <small class="text-muted">Create a custom parameter with a Header (Field Name) and Value</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="addCustomFieldForm" action="{% url 'bookings:custom_field_add' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+<!-- Field Header (Label) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="add_field_label">
+              Field Header / Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="label" id="add_field_label" class="form-control" placeholder="e.g. Battery Capacity, Sanctioned Load, Phase" required autofocus>
+            <div class="form-text small">The header or title identifying this custom parameter.</div>
+          </div>
+
+          <!-- Field Value -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="add_field_value">
+              Field Value <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="value" id="add_field_value" class="form-control" placeholder="e.g. 10 kWh LiFePO4, 5 kW, 3-Phase" required>
+            <div class="form-text small">The technical value, rating, serial number, or specification.</div>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3 bg-light">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary" id="saveCustomFieldBtn">
+            <i class="bi bi-plus-circle-fill me-1"></i> Save Custom Field
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit Custom Field / Parameter -->
+<div class="modal fade" id="editCustomFieldModal" tabindex="-1" aria-labelledby="editCustomFieldModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-bottom p-4">
+        <div>
+          <h5 class="modal-title fw-bold text-dark mb-1" id="editCustomFieldModalLabel">
+            <i class="bi bi-pencil-square text-primary me-2"></i>Edit Custom Project Field
+          </h5>
+          <small class="text-muted">Modify the header name or value of this specification</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editCustomFieldForm" action="" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="field_id" id="edit_field_id">
+        <div class="modal-body p-4">
+          <!-- Field Header (Label) -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="edit_field_label">
+              Field Header / Name <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="label" id="edit_field_label" class="form-control" required>
+          </div>
+
+          <!-- Field Value -->
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="edit_field_value">
+              Field Value <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="value" id="edit_field_value" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3 bg-light">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-solar-primary" id="updateCustomFieldBtn">
+            <i class="bi bi-check2 me-1"></i> Update Field
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Modal: Record Inward Payment Modal -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg);">
+      <div class="modal-header bg-success-subtle border-bottom p-4">
+        <div>
+          <h5 class="modal-title fw-bold text-success mb-1" id="recordPaymentModalLabel">
+            <i class="bi bi-cash-coin me-2"></i>Record Inward Payment
+          </h5>
+          <small class="text-secondary">Booking: <strong class="text-dark">{{ booking.booking_ref }}</strong> &bull; Outstanding Balance: <strong class="text-danger">₹{{ booking.balance_amount|floatformat:2|intcomma }}</strong></small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{% url 'bookings:record_payment' booking.pk %}" method="post">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <!-- Quick Amount Buttons if balance > 0 -->
+          {% if booking.balance_amount > 0 %}
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <span class="small text-muted fw-semibold">Quick Fill:</span>
+              <button type="button" class="btn btn-xs btn-outline-secondary py-1 px-2 small" onclick="document.getElementById('id_modal_amount').value='{{ booking.balance_amount }}'">
+                Full Balance (₹{{ booking.balance_amount|floatformat:0|intcomma }})
+              </button>
+            </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Amount Received (₹) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text bg-light fw-bold">₹</span>
+                <input type="number" step="0.01" min="0.01" name="amount" id="id_modal_amount" class="form-control fw-bold fs-6" required value="{{ booking.balance_amount|default:'' }}" placeholder="0.00">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Payment Date <span class="text-danger">*</span></label>
+              <input type="date" name="payment_date" class="form-control" required value="{% now 'Y-m-d' %}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Payment Method <span class="text-danger">*</span></label>
+              <select name="payment_method" class="form-select" required>
+                <option value="UPI" selected>UPI / QR Code (GPay, PhonePe)</option>
+                <option value="NEFT_RTGS">Bank Transfer (NEFT / RTGS)</option>
+                <option value="CHEQUE">Cheque / Demand Draft</option>
+                <option value="CASH">Cash</option>
+                <option value="CARD">Debit / Credit Card</option>
+                <option value="FINANCE_EMI">Solar Loan / EMI Partner</option>
+                <option value="OTHER">Other Mode</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small text-secondary">Milestone Tag <span class="text-danger">*</span></label>
+              <select name="milestone" class="form-select" required>
+                <option value="BOOKING_ADVANCE">1. Initial Booking Advance</option>
+                <option value="FEASIBILITY_APPROVAL">2. Feasibility & Survey Sign-off</option>
+                <option value="MATERIAL_DISPATCH">3. Hardware & Panel Dispatch</option>
+                <option value="INSTALLATION_PROGRESS">4. Installation & Structure Progress</option>
+                <option value="FINAL_COMMISSIONING" selected>5. Final Commissioning & Handover</option>
+                <option value="SUBSIDY_SETTLEMENT">6. Discom Subsidy / Net-Meter</option>
+                <option value="AD_HOC">7. Ad-hoc / Part Payment</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-secondary">Reference / UTR / Cheque Number</label>
+              <input type="text" name="transaction_ref" class="form-control" placeholder="e.g. UTR1234567890 / Chq #000452 / Txn ID">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold small text-secondary">Collection Remarks & Payer Info</label>
+              <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Paid from HDFC Bank account of client. Verified by accounts."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-top p-3 bg-light">
+          <button type="button" class="btn btn-solar-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success text-white">
+            <i class="bi bi-check2-circle me-1"></i> Save Payment & Generate Receipt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 5: Fullscreen Photo Lightbox Modal -->
+<div class="modal fade" id="photoViewerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 bg-dark text-white shadow-lg overflow-hidden" style="border-radius: var(--radius-lg);">
+      <div class="modal-header border-secondary p-3">
+        <div>
+          <span class="badge bg-primary me-2" id="photoViewerCategory"></span>
+          <span class="fw-bold" id="photoViewerTitle"></span>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0 text-center bg-black d-flex align-items-center justify-content-center" style="min-height: 380px;">
+        <img id="photoViewerImg" src="" alt="Full preview" class="img-fluid" style="max-height: 75vh; object-fit: contain;">
+      </div>
+      <div class="modal-footer border-secondary p-2 justify-content-between">
+        <span class="small text-muted">Click download to save original high-res file</span>
+        <a id="photoViewerDownload" href="" download class="btn btn-sm btn-outline-light">
+          <i class="bi bi-download me-1"></i> Download File
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openPhotoViewer(url, title, category) {
+  document.getElementById('photoViewerImg').src = url;
+  document.getElementById('photoViewerTitle').innerText = title;
+  document.getElementById('photoViewerCategory').innerText = category;
+  document.getElementById('photoViewerDownload').href = url;
+  new bootstrap.Modal(document.getElementById('photoViewerModal')).show();
+}
+</script>
+
+<!-- Modal: Add Booking Task Modal -->
+<div class="modal fade" id="addBookingTaskModal" tabindex="-1" aria-labelledby="addBookingTaskModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+      <div class="modal-header pb-2 border-light-subtle">
+        <h6 class="modal-title fw-bold font-heading text-dark" id="addBookingTaskModalLabel">
+          <i class="bi bi-plus-circle-fill text-primary me-1.5"></i>Add Task for #{{ booking.booking_ref }}
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="{% url 'bookings:task_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="booking_id" value="{{ booking.pk }}">
+        <div class="modal-body pt-2">
+          <div class="mb-2.5">
+            <label class="form-label small fw-semibold text-dark mb-1">Task Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" required class="form-control form-control-sm" placeholder="e.g. Roof shadow measurement, Submit DISCOM form...">
+          </div>
+          <div class="mb-2.5">
+            <label class="form-label small fw-semibold text-dark mb-1">Description / Notes</label>
+            <textarea name="description" rows="2" class="form-control form-control-sm" placeholder="Optional instructions or requirements..."></textarea>
+          </div>
+          <div class="row g-2 mb-2.5 align-items-center">
+            <div class="col-7">
+              <label class="form-label small fw-semibold text-dark mb-1">Assign Staff</label>
+              <input type="text" name="assigned_name" value="{{ booking.assigned_salesperson }}" class="form-control form-control-sm" placeholder="Staff or team name">
+            </div>
+            <div class="col-5">
+              <label class="form-label small fw-semibold text-dark mb-1 d-block">Priority</label>
+              <div class="form-check form-switch p-1 px-2 rounded-2 border d-flex align-items-center justify-content-between" style="background: #fff8f8; border-color: #fecaca !important; min-height: 31px;">
+                <label class="form-check-label fw-bold text-danger mb-0" for="bookingHighPrioritySwitch" style="font-size: 0.76rem; cursor: pointer;">
+                  <i class="bi bi-lightning-charge-fill text-danger me-1"></i>High Priority
+                </label>
+                <input class="form-check-input ms-1" type="checkbox" role="switch" name="is_high_priority" value="true" id="bookingHighPrioritySwitch" style="cursor: pointer; width: 34px; height: 18px;">
+              </div>
+            </div>
+          </div>
+          <div class="row g-2 mb-2.5">
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark mb-1">Status</label>
+              <select name="status" class="form-select form-select-sm">
+                <option value="PENDING">To Do</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold text-dark mb-1">Due Date</label>
+              <input type="date" name="due_date" class="form-control form-control-sm">
+            </div>
+          </div>
+
+          <!-- Task Checklist / Steps -->
+          <div class="mt-3 pt-2.5 border-top border-light-subtle">
+            <div class="mb-2">
+              <label class="form-label small fw-bold text-dark mb-0">
+                <i class="bi bi-check2-all text-primary me-1"></i>Task Checklist / Steps
+              </label>
+            </div>
+
+            <div id="bookingModalChecklistContainer" class="d-flex flex-column gap-1 mb-2"></div>
+
+            <div class="input-group input-group-sm">
+              <input type="text" id="bookingModalChecklistInput" class="form-control form-control-sm" placeholder="Add checklist step & press Enter...">
+              <button type="button" class="btn btn-light border px-2.5 text-secondary shadow-2xs" id="bookingModalChecklistAddBtn">
+                <i class="bi bi-plus-lg me-1"></i>Add Step
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer pt-1 border-light-subtle">
+          <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-solar-primary px-3">Add Action Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const detailToggles = document.querySelectorAll('.detail-task-toggle');
+  detailToggles.forEach(cb => {
+    cb.addEventListener('change', function() {
+      const taskId = this.dataset.taskId;
+      const url = this.dataset.url;
+      const isChecked = this.checked;
+      const item = document.getElementById('detail-task-item-' + taskId);
+      const titleEl = item ? item.querySelector('.detail-task-title') : null;
+      const pill = item ? item.querySelector('.task-status-pill') : null;
+
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          this.checked = data.is_completed;
+          if (item) {
+            if (data.is_completed) {
+              item.classList.add('opacity-60', 'bg-light-subtle');
+              if (titleEl) titleEl.classList.add('text-decoration-line-through', 'text-muted');
+              if (pill) {
+                pill.className = 'badge rounded-1 bg-success-subtle text-success border border-success-subtle py-0.5 px-1.5 fw-medium task-status-pill';
+                pill.innerHTML = '<i class="bi bi-check-circle-fill me-0.5"></i>Completed';
+              }
+              const compInfo = item.querySelector('.task-completed-info');
+              if (compInfo) {
+                compInfo.classList.remove('d-none');
+                compInfo.classList.add('d-inline-flex');
+                compInfo.innerHTML = `<i class="bi bi-person-check-fill text-success"></i>Completed by <strong class="text-dark">${data.completed_by || 'Staff'}</strong> on ${data.completed_at || 'Just now'}`;
+              }
+            } else {
+              item.classList.remove('opacity-60', 'bg-light-subtle');
+              if (titleEl) titleEl.classList.remove('text-decoration-line-through', 'text-muted');
+              if (pill) {
+                pill.className = 'badge rounded-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0.5 px-1.5 fw-medium task-status-pill';
+                pill.innerHTML = '<i class="bi bi-arrow-counterclockwise me-0.5"></i>To Do (Reopened)';
+              }
+              const compInfo = item.querySelector('.task-completed-info');
+              if (compInfo) {
+                compInfo.classList.remove('d-inline-flex');
+                compInfo.classList.add('d-none');
+                compInfo.innerHTML = '';
+              }
+            }
+          }
+          if (window.SolarToast) {
+            SolarToast.success(data.message || (data.is_completed ? 'Task completed!' : 'Task reopened!'));
+          }
+        } else {
+          this.checked = !isChecked;
+        }
+      })
+      .catch(err => {
+        console.error('Task toggle error:', err);
+        this.checked = !isChecked;
+        if (window.SolarToast) SolarToast.error('Could not update task status.');
+      });
+    });
+  });
+});
+
+
+  // Live Status Change in Booking Detail Tasks Card
+  document.addEventListener('click', function(e) {
+    const act = e.target.closest('.detail-status-action');
+    if (act) {
+      e.preventDefault();
+      const taskId = act.dataset.taskId;
+      const status = act.dataset.status;
+      if (!taskId || !status) return;
+
+      const fd = new FormData();
+      fd.append('status', status);
+
+      fetch(`/bookings/tasks/${taskId}/status/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: fd
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          const item = document.getElementById('detail-task-item-' + taskId);
+          if (item) {
+            const cb = item.querySelector('.detail-task-toggle');
+            if (cb) cb.checked = data.is_completed;
+
+            const titleEl = item.querySelector('.detail-task-title');
+            if (titleEl) {
+              titleEl.classList.toggle('text-decoration-line-through', data.is_completed);
+              titleEl.classList.toggle('text-muted', data.is_completed);
+            }
+
+            item.classList.toggle('opacity-60', data.is_completed);
+            item.classList.toggle('bg-light-subtle', data.is_completed);
+
+            const pill = item.querySelector('.task-status-pill');
+            if (pill) {
+              if (data.is_completed) {
+                pill.className = 'badge rounded-1 bg-success-subtle text-success border border-success-subtle py-0.5 px-1.5 fw-medium task-status-pill';
+                pill.style.cssText = '';
+                pill.innerHTML = '<i class="bi bi-check-circle-fill me-0.5"></i>Completed';
+              } else if (data.status_code === 'IN_PROGRESS') {
+                pill.className = 'badge rounded-1 border py-0.5 px-1.5 fw-medium task-status-pill';
+                pill.style.cssText = 'font-size: 0.68rem; background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe !important;';
+                pill.innerHTML = '<i class="bi bi-hourglass-split me-0.5"></i>In Progress';
+              } else {
+                pill.className = 'badge rounded-1 bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0.5 px-1.5 fw-medium task-status-pill';
+                pill.style.cssText = '';
+                pill.innerHTML = '<i class="bi bi-arrow-counterclockwise me-0.5"></i>To Do';
+              }
+            }
+
+            const compInfo = item.querySelector('.task-completed-info');
+            if (compInfo) {
+              if (data.is_completed) {
+                compInfo.classList.remove('d-none');
+                compInfo.classList.add('d-inline-flex');
+                compInfo.innerHTML = `<i class="bi bi-person-check-fill text-success"></i>Completed by <strong class="text-dark">${data.completed_by || 'Staff'}</strong> on ${data.completed_at || 'Just now'}`;
+              } else {
+                compInfo.classList.remove('d-inline-flex');
+                compInfo.classList.add('d-none');
+                compInfo.innerHTML = '';
+              }
+            }
+          }
+          if (window.SolarToast) SolarToast.success(data.message || 'Task status updated');
+        }
+      })
+      .catch(err => {
+        console.error('Error updating task status:', err);
+        if (window.SolarToast) SolarToast.error('Could not update status');
+      });
+    }
+  });
+
+  // Checklist toggle in booking detail task list
+  document.querySelectorAll('.detail-checklist-toggle').forEach(chk => {
+    chk.addEventListener('change', function() {
+      const toggleUrl = this.dataset.toggleUrl;
+      const label = this.closest('.d-flex').querySelector('label');
+
+      fetch(toggleUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          if (label) {
+            if (data.is_completed) {
+              label.classList.add('text-decoration-line-through', 'text-muted');
+              label.classList.remove('text-dark');
+            } else {
+              label.classList.remove('text-decoration-line-through', 'text-muted');
+              label.classList.add('text-dark');
+            }
+          }
+          if (window.SolarToast) SolarToast.success(data.message || 'Checklist updated');
+        }
+      });
+    });
+  });
+
+  // Modal Checklist builder for booking detail
+  // Dynamic workflow steps used instead of static templates
+
+  const bModalInput = document.getElementById('bookingModalChecklistInput');
+  const bModalAddBtn = document.getElementById('bookingModalChecklistAddBtn');
+  const bModalContainer = document.getElementById('bookingModalChecklistContainer');
+
+  function addStepToBookingModal(title) {
+    title = (title || '').trim();
+    if (!title || !bModalContainer) return;
+
+    const row = document.createElement('div');
+    row.className = 'd-flex align-items-center justify-content-between p-1.5 px-2 bg-light rounded border';
+    row.style.fontSize = '0.75rem';
+    row.innerHTML = `
+      <div class="d-flex align-items-center gap-1.5 text-dark overflow-hidden me-2">
+        <i class="bi bi-check2 text-primary flex-shrink-0"></i>
+        <span class="text-truncate">${title}</span>
+        <input type="hidden" name="checklist_items[]" value="${title}">
+      </div>
+      <button type="button" class="btn btn-xs btn-link text-danger p-0" title="Remove step">
+        <i class="bi bi-trash"></i>
+      </button>
+    `;
+    row.querySelector('button').addEventListener('click', () => row.remove());
+    bModalContainer.appendChild(row);
+  }
+
+  if (bModalAddBtn && bModalInput) {
+    bModalAddBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      addStepToBookingModal(bModalInput.value);
+      bModalInput.value = '';
+      bModalInput.focus();
+    });
+
+    bModalInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        bModalAddBtn.click();
+      }
+    });
+  }
+
+
+
+
+  // ==========================================
+  // REAL-TIME FILE UPLOAD WITH PROGRESS BAR
+  // ==========================================
+  const uploadForm = document.getElementById('uploadAttachmentForm');
+  const fileInput = document.getElementById('id_attachment_file');
+  const titleInput = document.getElementById('id_attachment_title');
+  const filePreview = document.getElementById('fileSelectionPreview');
+  const previewFileName = document.getElementById('previewFileName');
+  const previewFileSize = document.getElementById('previewFileSize');
+  const progressSection = document.getElementById('uploadProgressSection');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const percentBadge = document.getElementById('uploadPercentBadge');
+  const statusLabel = document.getElementById('uploadStatusLabel');
+  const uploadSpinner = document.getElementById('uploadSpinner');
+  const uploadDoneIcon = document.getElementById('uploadDoneIcon');
+  const bytesInfo = document.getElementById('uploadBytesInfo');
+  const submitBtn = document.getElementById('uploadSubmitBtn');
+  const cancelBtn = document.getElementById('uploadCancelBtn');
+  const closeBtn = document.getElementById('uploadModalCloseBtn');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const file = this.files[0];
+        if (filePreview) {
+          filePreview.classList.remove('d-none');
+          if (previewFileName) previewFileName.textContent = file.name;
+          if (previewFileSize) {
+            const sizeKb = (file.size / 1024).toFixed(1);
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            previewFileSize.textContent = file.size > 1048576 ? `${sizeMb} MB` : `${sizeKb} KB`;
+          }
+        }
+        if (titleInput && !titleInput.value.trim()) {
+          const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+          titleInput.value = baseName.replace(/[-_]+/g, ' ');
+        }
+      }
+    });
+  }
+
+  if (uploadForm) {
+    uploadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (!fileInput.files || !fileInput.files[0]) {
+        if (window.SolarToast) SolarToast.error("Please select a file to upload.");
+        return;
+      }
+
+      const formData = new FormData(uploadForm);
+      const xhr = new XMLHttpRequest();
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+      }
+      if (cancelBtn) cancelBtn.disabled = true;
+      if (closeBtn) closeBtn.disabled = true;
+
+      if (progressSection) progressSection.classList.remove('d-none');
+      if (uploadSpinner) uploadSpinner.classList.remove('d-none');
+      if (uploadDoneIcon) uploadDoneIcon.classList.add('d-none');
+      if (progressBar) {
+        progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+        progressBar.style.width = '0%';
+      }
+      if (percentBadge) {
+        percentBadge.className = 'badge bg-primary fs-6 px-2.5 py-1';
+        percentBadge.textContent = '0%';
+      }
+      if (statusLabel) statusLabel.textContent = 'Uploading file...';
+
+      xhr.open('POST', uploadForm.action, true);
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+      xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+          const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+          if (progressBar) progressBar.style.width = percent + '%';
+          if (percentBadge) percentBadge.textContent = percent + '%';
+
+          const loadedMb = (event.loaded / (1024 * 1024)).toFixed(2);
+          const totalMb = (event.total / (1024 * 1024)).toFixed(2);
+          if (bytesInfo) bytesInfo.textContent = `${loadedMb} MB / ${totalMb} MB`;
+
+          if (percent >= 99) {
+            if (statusLabel) statusLabel.textContent = 'Processing and saving document...';
+            if (percentBadge) percentBadge.textContent = '100%';
+            if (progressBar) progressBar.style.width = '100%';
+          } else {
+            if (statusLabel) statusLabel.textContent = `Uploading... ${percent}%`;
+          }
+        }
+      };
+
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (progressBar) {
+            progressBar.style.width = '100%';
+            progressBar.className = 'progress-bar bg-success';
+          }
+          if (percentBadge) {
+            percentBadge.textContent = '100%';
+            percentBadge.className = 'badge bg-success fs-6 px-2.5 py-1';
+          }
+          if (uploadSpinner) uploadSpinner.classList.add('d-none');
+          if (uploadDoneIcon) uploadDoneIcon.classList.remove('d-none');
+          if (statusLabel) statusLabel.textContent = 'Upload Completed Successfully!';
+
+          if (window.SolarToast) {
+            SolarToast.success("Document uploaded successfully!");
+          }
+
+          setTimeout(() => {
+            const modalEl = document.getElementById('uploadAttachmentModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            window.location.reload();
+          }, 600);
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Now';
+          }
+          if (cancelBtn) cancelBtn.disabled = false;
+          if (closeBtn) closeBtn.disabled = false;
+          if (progressSection) progressSection.classList.add('d-none');
+
+          let errMsg = "Upload failed. Please check the file and try again.";
+          try {
+            const resp = JSON.parse(xhr.responseText);
+            if (resp.message) errMsg = resp.message;
+          } catch (err) {}
+          if (window.SolarToast) SolarToast.error(errMsg);
+          else alert(errMsg);
+        }
+      };
+
+      xhr.onerror = function() {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Now';
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+        if (closeBtn) closeBtn.disabled = false;
+        if (progressSection) progressSection.classList.add('d-none');
+        if (window.SolarToast) SolarToast.error("Network error while uploading. Please check connection.");
+      };
+
+      xhr.send(formData);
+    });
+  }
+
+  // ==========================================
+  // CUSTOM FIELDS (SPECIFICATIONS) JAVASCRIPT
+  // ==========================================
+  document.querySelectorAll('.custom-field-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      const headerInput = document.getElementById('add_field_label');
+      const valInput = document.getElementById('add_field_value');
+      if (headerInput) headerInput.value = this.dataset.presetHeader || '';
+      if (valInput && this.dataset.presetVal) valInput.value = this.dataset.presetVal;
+      if (valInput) valInput.focus();
+    });
+  });
+
+  function bindCustomFieldRowEvents(row) {
+    const editBtn = row.querySelector('.edit-custom-field-btn');
+    const deleteBtn = row.querySelector('.delete-custom-field-btn');
+
+    if (editBtn) {
+      editBtn.addEventListener('click', function() {
+        const fieldId = this.dataset.id;
+        const fieldLabel = this.dataset.label;
+        const fieldValue = this.dataset.value;
+        const editUrl = this.dataset.url;
+
+        document.getElementById('edit_field_id').value = fieldId;
+        document.getElementById('edit_field_label').value = fieldLabel;
+        document.getElementById('edit_field_value').value = fieldValue;
+        document.getElementById('editCustomFieldForm').action = editUrl;
+
+        const editModal = new bootstrap.Modal(document.getElementById('editCustomFieldModal'));
+        editModal.show();
+      });
+    }
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', function() {
+        const fieldId = this.dataset.id;
+        const fieldLabel = this.dataset.label;
+        const deleteUrl = this.dataset.url;
+
+        if (!confirm(`Are you sure you want to delete custom field "${fieldLabel}"?`)) {
+          return;
+        }
+
+        const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+        const csrfToken = csrfEl ? csrfEl.value : '';
+
+        fetch(deleteUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            const rowEl = document.getElementById(`custom-field-row-${fieldId}`);
+            if (rowEl) rowEl.remove();
+
+            const countBadge = document.getElementById('customFieldsCountBadge');
+            const tbody = document.getElementById('customFieldsTableBody');
+            const remainingRows = tbody ? tbody.querySelectorAll('tr').length : 0;
+            if (countBadge) countBadge.textContent = remainingRows;
+
+            if (remainingRows === 0) {
+              const container = document.getElementById('customFieldsContainer');
+              if (container) {
+                container.innerHTML = `
+                  <div id="customFieldsEmptyState" class="text-center py-4 px-3 border border-dashed rounded-3 bg-light">
+                    <i class="bi bi-sliders2 text-muted" style="font-size: 2.2rem;"></i>
+                    <h6 class="fw-bold text-dark mt-2 mb-1">No Custom Specifications Added</h6>
+                    <p class="text-muted small mb-3">Add custom technical parameters like Battery Storage, Sanctioned Load, Phase Type, Roof Angle, Inverter Serial, or DISCOM details.</p>
+                    <button type="button" class="btn btn-sm btn-solar-primary" data-bs-toggle="modal" data-bs-target="#addCustomFieldModal">
+                      <i class="bi bi-plus-circle-fill me-1"></i> Add First Field
+                    </button>
+                  </div>
+                `;
+              }
+            }
+
+            if (window.SolarToast) SolarToast.success(data.message || "Field deleted successfully.");
+          } else {
+            if (window.SolarToast) SolarToast.error(data.message || "Could not delete field.");
+          }
+        })
+        .catch(err => {
+          if (window.SolarToast) SolarToast.error("Failed to delete custom field.");
+        });
+      });
+    }
+  }
+
+  document.querySelectorAll('#customFieldsTableBody tr').forEach(bindCustomFieldRowEvents);
+
+  const addFieldForm = document.getElementById('addCustomFieldForm');
+  if (addFieldForm) {
+    addFieldForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveCustomFieldBtn');
+      const label = document.getElementById('add_field_label').value.trim();
+      const value = document.getElementById('add_field_value').value.trim();
+
+      if (!label || !value) {
+        if (window.SolarToast) SolarToast.error("Both Field Header and Value are required.");
+        return;
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
+      }
+
+      const formData = new FormData(addFieldForm);
+      const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+      const csrfToken = csrfEl ? csrfEl.value : '';
+
+      fetch(addFieldForm.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> Save Custom Field';
+        }
+
+        if (data.status === 'success') {
+          const field = data.field;
+          let tbody = document.getElementById('customFieldsTableBody');
+          if (!tbody) {
+            const container = document.getElementById('customFieldsContainer');
+            container.innerHTML = `
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="customFieldsTable" style="font-size: 0.85rem;">
+                  <thead class="table-light text-muted text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                    <tr>
+                      <th style="width: 38%;">Field Header</th>
+                      <th style="width: 47%;">Value</th>
+                      <th style="width: 15%; text-align: right;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="customFieldsTableBody"></tbody>
+                </table>
+              </div>
+            `;
+            tbody = document.getElementById('customFieldsTableBody');
+          }
+
+          const tr = document.createElement('tr');
+          tr.id = `custom-field-row-${field.id}`;
+          tr.innerHTML = `
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark border px-2 py-1">
+                  <i class="bi bi-tag-fill text-primary me-1"></i>
+                  <strong class="field-label-text">${escapeHtml(field.label)}</strong>
+                </span>
+              </div>
+            </td>
+            <td>
+              <span class="fw-semibold text-dark field-value-text">${escapeHtml(field.value)}</span>
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-xs btn-outline-primary me-1 edit-custom-field-btn"
+                      data-id="${field.id}"
+                      data-label="${escapeHtml(field.label)}"
+                      data-value="${escapeHtml(field.value)}"
+                      data-url="${field.edit_url}"
+                      title="Edit field">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button type="button" class="btn btn-xs btn-outline-danger delete-custom-field-btn"
+                      data-id="${field.id}"
+                      data-label="${escapeHtml(field.label)}"
+                      data-url="${field.delete_url}"
+                      title="Delete field">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+          bindCustomFieldRowEvents(tr);
+
+          const countBadge = document.getElementById('customFieldsCountBadge');
+          if (countBadge) countBadge.textContent = tbody.querySelectorAll('tr').length;
+
+          addFieldForm.reset();
+          const modalEl = document.getElementById('addCustomFieldModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+
+          if (window.SolarToast) SolarToast.success(data.message || "Custom field added successfully!");
+        } else {
+          if (window.SolarToast) SolarToast.error(data.message || "Failed to add custom field.");
+        }
+      })
+      .catch(err => {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> Save Custom Field';
+        }
+        if (window.SolarToast) SolarToast.error("An error occurred while saving the field.");
+      });
+    });
+  }
+
+  const editFieldForm = document.getElementById('editCustomFieldForm');
+  if (editFieldForm) {
+    editFieldForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const updateBtn = document.getElementById('updateCustomFieldBtn');
+      const fieldId = document.getElementById('edit_field_id').value;
+      const label = document.getElementById('edit_field_label').value.trim();
+      const value = document.getElementById('edit_field_value').value.trim();
+
+      if (!label || !value) {
+        if (window.SolarToast) SolarToast.error("Both Field Header and Value are required.");
+        return;
+      }
+
+      if (updateBtn) {
+        updateBtn.disabled = true;
+        updateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating...';
+      }
+
+      const formData = new FormData(editFieldForm);
+      const csrfEl = document.querySelector('[name=csrfmiddlewaretoken]');
+      const csrfToken = csrfEl ? csrfEl.value : '';
+
+      fetch(editFieldForm.action, {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': csrfToken,
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (updateBtn) {
+          updateBtn.disabled = false;
+          updateBtn.innerHTML = '<i class="bi bi-check2 me-1"></i> Update Field';
+        }
+
+        if (data.status === 'success') {
+          const field = data.field;
+          const row = document.getElementById(`custom-field-row-${field.id}`);
+          if (row) {
+            const labelEl = row.querySelector('.field-label-text');
+            const valEl = row.querySelector('.field-value-text');
+            if (labelEl) labelEl.textContent = field.label;
+            if (valEl) valEl.textContent = field.value;
+            const editBtn = row.querySelector('.edit-custom-field-btn');
+            if (editBtn) {
+              editBtn.dataset.label = field.label;
+              editBtn.dataset.value = field.value;
+            }
+            const delBtn = row.querySelector('.delete-custom-field-btn');
+            if (delBtn) {
+              delBtn.dataset.label = field.label;
+            }
+          }
+
+          const modalEl = document.getElementById('editCustomFieldModal');
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          if (modal) modal.hide();
+
+          if (window.SolarToast) SolarToast.success(data.message || "Custom field updated!");
+        } else {
+          if (window.SolarToast) SolarToast.error(data.message || "Failed to update custom field.");
+        }
+      })
+      .catch(err => {
+        if (updateBtn) {
+          updateBtn.disabled = false;
+          updateBtn.innerHTML = '<i class="bi bi-check2 me-1"></i> Update Field';
+        }
+        if (window.SolarToast) SolarToast.error("An error occurred while updating the field.");
+      });
+    });
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // ==========================================
+  // WINDOWS STICKY NOTES INTERACTION JAVASCRIPT
+  // ==========================================
+  const stickyComposer = document.getElementById('stickyComposer');
+  const stickyEditable = document.getElementById('stickyEditable');
+  const stickyHidden = document.getElementById('stickyNoteHiddenText');
+  const stickyColorInput = document.getElementById('stickyColorInput');
+  const stickyForm = document.getElementById('stickyNoteForm');
+
+  // Format buttons (Bold, Italic, Underline, Strikethrough, Bullet list)
+  document.querySelectorAll('.format-btn').forEach(btn => {
+    btn.addEventListener('mousedown', function(e) {
+      e.preventDefault(); // Keep focus inside editable
+      const cmd = this.dataset.cmd;
+      if (cmd) {
+        document.execCommand(cmd, false, null);
+      }
+    });
+  });
+
+  // Color picker dots
+  document.querySelectorAll('.sticky-color-palette .color-dot').forEach(dot => {
+    dot.addEventListener('click', function() {
+      document.querySelectorAll('.sticky-color-palette .color-dot').forEach(d => {
+        d.classList.remove('active');
+        d.style.borderColor = 'transparent';
+      });
+      this.classList.add('active');
+      this.style.borderColor = '#0f172a';
+
+      const color = this.dataset.color || 'YELLOW';
+      const bg = this.dataset.bg || '#fefce8';
+      const border = this.dataset.border || '#fde047';
+
+      if (stickyComposer) {
+        stickyComposer.style.background = bg;
+        stickyComposer.style.borderColor = border;
+      }
+      if (stickyColorInput) {
+        stickyColorInput.value = color;
+      }
+    });
+  });
+
+  // Form submit synchronization
+  if (stickyForm && stickyEditable && stickyHidden) {
+    stickyForm.addEventListener('submit', function(e) {
+      const html = stickyEditable.innerHTML.trim();
+      const plainText = stickyEditable.textContent.trim();
+      if (!plainText && (!html || html === '<br>')) {
+        e.preventDefault();
+        stickyEditable.focus();
+        if (window.SolarToast) {
+          SolarToast.warning('Please enter some text in the note before posting.', 'Empty Sticky Note');
+        } else {
+          alert('Please enter some text in the note before posting.');
+        }
+        return false;
+      }
+      stickyHidden.value = html;
+    });
+  }
+
+
+  // ── Change Project Status Modal Interactivity ────────────────
+  const stageTiles = document.querySelectorAll('.stage-option-tile');
+  const targetBadge = document.getElementById('statusModalTargetBadge');
+  const submitText = document.getElementById('btnSubmitStatusText');
+
+  stageTiles.forEach(tile => {
+    tile.addEventListener('click', function() {
+      stageTiles.forEach(t => {
+        t.style.borderColor = '#e2e8f0';
+        t.style.background = '#ffffff';
+        t.classList.remove('selected-stage-tile');
+        const bullet = t.querySelector('.stage-radio-bullet');
+        if (bullet) {
+          bullet.style.borderColor = '#cbd5e1';
+          bullet.style.background = '#ffffff';
+          const dot = bullet.querySelector('.bullet-dot');
+          if (dot) dot.style.display = 'none';
+        }
+      });
+
+      this.style.borderColor = '#059669';
+      this.style.background = '#f0fdf4';
+      this.classList.add('selected-stage-tile');
+      const radio = this.querySelector('.stage-radio-input');
+      if (radio) radio.checked = true;
+
+      const bullet = this.querySelector('.stage-radio-bullet');
+      if (bullet) {
+        bullet.style.borderColor = '#059669';
+        bullet.style.background = '#059669';
+        const dot = bullet.querySelector('.bullet-dot');
+        if (dot) dot.style.display = 'block';
+      }
+
+      const stageName = this.dataset.stageName || '';
+      const stageIcon = this.dataset.stageIcon || 'bi-circle';
+      const stageColor = this.dataset.stageColor || '#059669';
+
+      if (targetBadge) {
+        targetBadge.innerHTML = `<i class="bi ${stageIcon}"></i> <span>${stageName}</span>`;
+        targetBadge.style.backgroundColor = stageColor;
+      }
+      if (submitText) {
+        submitText.textContent = `Update to ${stageName}`;
+      }
+    });
+  });
+</script>
+
+<style>
+  /* Sticky Notes & Composer Styling */
+  .sticky-color-palette .color-dot {
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .sticky-color-palette .color-dot:hover {
+    transform: scale(1.18);
+  }
+  .sticky-color-palette .color-dot.active {
+    box-shadow: 0 0 0 2px #0f172a;
+    transform: scale(1.18);
+  }
+  .sticky-editable-paper:empty:before {
+    content: attr(data-placeholder);
+    color: #94a3b8;
+    pointer-events: none;
+    display: block;
+  }
+  .sticky-editable-paper ul,
+  .sticky-note-body ul {
+    padding-left: 1.35rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    list-style-type: disc;
+  }
+  .sticky-editable-paper li,
+  .sticky-note-body li {
+    margin-bottom: 0.25rem;
+  }
+  .sticky-format-toolbar button {
+    color: #475569;
+    transition: all 0.1s ease;
+  }
+  .sticky-format-toolbar button:hover,
+  .sticky-format-toolbar button:active {
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+  .sticky-note-item {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .sticky-note-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
+  }
+
+  /* Stage Option Tiles */
+  .stage-option-tile {
+    cursor: pointer;
+    user-select: none;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--border) !important;
+    transition: all 0.15s ease;
+  }
+  .stage-option-tile:hover {
+    border-color: var(--brand-border) !important;
+    background: var(--bg-muted);
+  }
+  .stage-option-tile.selected-stage-tile {
+    background: #f0fdf4 !important;
+    border-color: #16a34a !important;
+    box-shadow: 0 0 0 1px #16a34a inset;
+  }
+  .stage-option-tile.selected-stage-tile .stage-name-text {
+    color: #15803d !important;
+  }
+</style>
+{% endblock %}

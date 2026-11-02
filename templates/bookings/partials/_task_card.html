@@ -1,0 +1,300 @@
+<div class="task-kanban-card {% if task.is_completed %}completed{% elif task.status == 'IN_PROGRESS' %}in-progress{% endif %} {% if task.is_high_priority %}is-high-priority{% endif %}" id="task-card-{{ task.pk }}" draggable="true" data-task-id="{{ task.pk }}">
+  <!-- Card Header: Priority Pill (if high) + Category Badge + Action Dropdown -->
+  <div class="d-flex align-items-center justify-content-between gap-1.5 mb-2">
+    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+      {% if task.is_high_priority %}
+        <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle fw-semibold" style="font-size: 0.65rem; padding: 0.18rem 0.5rem; letter-spacing: 0.02em;">
+          <i class="bi bi-lightning-charge-fill me-0.5 text-danger"></i>High Priority
+        </span>
+      {% endif %}
+      {% if not task.is_completed and task.status == 'IN_PROGRESS' %}
+        <span class="badge rounded-pill border fw-semibold card-in-progress-pill" style="font-size: 0.65rem; padding: 0.18rem 0.5rem; background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe !important;">
+          <i class="bi bi-hourglass-split me-0.5"></i>In Progress
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Dropdown Actions Menu -->
+    <div class="dropdown">
+      <button class="btn btn-xs btn-link text-muted p-0 opacity-50 hover-opacity-100 text-decoration-none" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="line-height: 1;" title="More options">
+        <i class="bi bi-three-dots-vertical"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm border py-1" style="font-size: 0.76rem; min-width: 150px; border-radius: 8px;">
+        <li>
+          <button class="dropdown-item py-1.5 task-open-trigger" type="button" data-task-id="{{ task.pk }}">
+            <i class="bi bi-arrows-angle-expand me-1.5 text-primary"></i>Open Task Details
+          </button>
+        </li>
+        {% if task.booking %}
+          <li>
+            <a class="dropdown-item py-1.5" href="{{ task.booking.get_absolute_url }}">
+              <i class="bi bi-box-arrow-up-right me-1.5 text-primary"></i>View Order
+            </a>
+          </li>
+        {% endif %}
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <button class="dropdown-item py-1.5 task-set-status-btn" type="button" data-task-id="{{ task.pk }}" data-status="PENDING">
+            <i class="bi bi-record-circle me-1.5 text-primary"></i>Move to To Do
+          </button>
+        </li>
+        <li>
+          <button class="dropdown-item py-1.5 task-set-status-btn" type="button" data-task-id="{{ task.pk }}" data-status="IN_PROGRESS">
+            <i class="bi bi-hourglass-split me-1.5" style="color: #7c3aed;"></i>Move to In Progress
+          </button>
+        </li>
+        <li>
+          <button class="dropdown-item py-1.5 task-set-status-btn" type="button" data-task-id="{{ task.pk }}" data-status="COMPLETED">
+            <i class="bi bi-check2-circle me-1.5 text-success"></i>Mark Completed
+          </button>
+        </li>
+        <li><hr class="dropdown-divider my-1"></li>
+        <li>
+          <form method="post" action="{% url 'bookings:task_delete' task.pk %}" onsubmit="return confirm('Are you sure you want to delete this task?');">
+            {% csrf_token %}
+            <button type="submit" class="dropdown-item py-1.5 text-danger">
+              <i class="bi bi-trash3 me-1.5"></i>Delete Task
+            </button>
+          </form>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Task Title (Clickable to open details modal) -->
+  <div class="fw-bold text-dark task-card-title task-open-trigger mb-1 {% if task.is_completed %}text-decoration-line-through text-muted{% endif %}"
+       data-task-id="{{ task.pk }}"
+       role="button"
+       tabindex="0"
+       title="Click to view details, due date, creator & checklist"
+       style="font-size: 0.88rem; line-height: 1.35; letter-spacing: -0.01em; cursor: pointer;">
+    <span>{{ task.title }}</span>
+    <i class="bi bi-box-arrow-up-right text-muted opacity-0 task-title-arrow ms-1" style="font-size: 0.7rem; transition: opacity 0.15s ease;"></i>
+  </div>
+
+  <!-- Optional Description -->
+  {% if task.description %}
+    <p class="text-muted small mb-2 text-truncate-2" style="font-size: 0.74rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+      {{ task.description }}
+    </p>
+  {% endif %}
+
+  <!-- Linked Solar Booking / Customer Chip -->
+  {% if task.booking %}
+    <div class="task-project-pill mb-2">
+      <i class="bi bi-sun text-warning flex-shrink-0" style="font-size: 0.78rem;"></i>
+      <a href="{{ task.booking.get_absolute_url }}" class="fw-bold font-monospace text-decoration-none text-primary flex-shrink-0" title="Go to booking">
+        #{{ task.booking.booking_ref }}
+      </a>
+      <span class="text-muted opacity-40">&bull;</span>
+      <span class="text-dark fw-medium text-truncate" title="{{ task.booking.customer.name }}">
+        {{ task.booking.customer.name }}
+      </span>
+      {% if task.booking.system_capacity_kw %}
+        <span class="badge rounded-1 bg-amber-subtle text-dark border border-warning-subtle ms-auto flex-shrink-0" style="font-size: 0.62rem; padding: 0.1rem 0.35rem; background: #fffbeb; color: #92400e;">
+          {{ task.booking.system_capacity_kw }} kW
+        </span>
+      {% endif %}
+    </div>
+  {% elif task.customer %}
+    <div class="task-project-pill mb-2">
+      <i class="bi bi-person text-secondary flex-shrink-0" style="font-size: 0.78rem;"></i>
+      <span class="text-dark fw-medium text-truncate">{{ task.customer.name }}</span>
+    </div>
+  {% endif %}
+
+  <!-- Due Date Badge (if scheduled) -->
+  {% if task.due_date %}
+    <div class="mb-2">
+      {% if task.is_overdue %}
+        <span class="badge rounded-pill fw-bold" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.66rem; padding: 0.18rem 0.45rem;">
+          <i class="bi bi-clock-history me-1"></i>Overdue: {{ task.due_date|date:"M d" }}
+        </span>
+      {% else %}
+        <span class="badge rounded-pill fw-medium text-muted" style="background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.66rem; padding: 0.18rem 0.45rem;">
+          <i class="bi bi-calendar3 me-1"></i>{{ task.due_date|date:"M d, Y" }}
+        </span>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- Task Checklist (Interactive) -->
+  {% if task.has_checklist %}
+    <div class="task-checklist-container mb-2" id="task-checklist-{{ task.pk }}">
+      <div class="d-flex align-items-center justify-content-between cursor-pointer task-checklist-header" data-bs-toggle="collapse" data-bs-target="#checklist-body-{{ task.pk }}" aria-expanded="false" style="font-size: 0.72rem;">
+        <div class="d-flex align-items-center gap-1.5 text-secondary">
+          <i class="bi bi-check2-all text-primary"></i>
+          <span class="fw-semibold">Checklist</span>
+          <span class="badge bg-white text-secondary border px-1.5 py-0.2 font-monospace" id="checklist-counter-{{ task.pk }}" style="font-size: 0.65rem;">
+            {{ task.checklist_completed_count }}/{{ task.checklist_total }}
+          </span>
+        </div>
+        <div class="d-flex align-items-center gap-1">
+          <span class="text-muted fw-semibold font-monospace" id="checklist-pct-{{ task.pk }}" style="font-size: 0.68rem;">{{ task.checklist_progress_pct }}%</span>
+          <i class="bi bi-chevron-down text-muted" style="font-size: 0.65rem;"></i>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress my-1.5" style="height: 4px; border-radius: 2px; background: #e2e8f0;">
+        <div class="progress-bar {% if task.checklist_progress_pct == 100 %}bg-success{% else %}bg-primary{% endif %}"
+             id="checklist-bar-{{ task.pk }}"
+             role="progressbar"
+             style="width: {{ task.checklist_progress_pct }}%;"
+             aria-valuenow="{{ task.checklist_progress_pct }}"
+             aria-valuemin="0"
+             aria-valuemax="100"></div>
+      </div>
+
+      <!-- Collapsible Checklist Items List -->
+      <div class="collapse task-checklist-body" id="checklist-body-{{ task.pk }}">
+        <div class="checklist-items-list d-flex flex-column gap-1 pt-1" id="checklist-items-{{ task.pk }}">
+          {% for item in task.checklist_items_all %}
+            <div class="d-flex align-items-start justify-content-between gap-1.5 p-1 rounded hover-bg-light" id="checklist-item-{{ item.pk }}" style="font-size: 0.73rem;">
+              <div class="form-check m-0 p-0 d-flex align-items-start gap-1.5 flex-grow-1">
+                <input class="form-check-input flex-shrink-0 checklist-item-toggle"
+                       type="checkbox"
+                       {% if item.is_completed %}checked{% endif %}
+                       data-task-id="{{ task.pk }}"
+                       data-item-id="{{ item.pk }}"
+                       data-toggle-url="{% url 'bookings:checklist_toggle' item.pk %}"
+                       id="chk-{{ item.pk }}"
+                       style="width: 14px; height: 14px; margin-top: 2px; cursor: pointer;">
+                <label class="form-check-label flex-grow-1 cursor-pointer checklist-item-label {% if item.is_completed %}text-decoration-line-through text-muted{% else %}text-dark{% endif %}"
+                       for="chk-{{ item.pk }}"
+                       style="line-height: 1.3;">
+                  {{ item.title }}
+                </label>
+              </div>
+              <button type="button" class="btn btn-xs btn-link text-muted p-0 opacity-0 checklist-item-del-btn"
+                      data-task-id="{{ task.pk }}"
+                      data-item-id="{{ item.pk }}"
+                      data-delete-url="{% url 'bookings:checklist_delete' item.pk %}"
+                      title="Delete item"
+                      style="line-height: 1; font-size: 0.7rem;">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Inline Quick-Add Step -->
+        <form class="d-flex align-items-center gap-1 mt-1.5 pt-1 border-top border-light-subtle checklist-add-form"
+              data-task-id="{{ task.pk }}"
+              data-add-url="{% url 'bookings:checklist_add' task.pk %}">
+          <input type="text"
+                 name="title"
+                 class="form-control form-control-xs py-0.5 px-1.5"
+                 placeholder="+ Add step..."
+                 style="font-size: 0.72rem; height: 24px; border-radius: 4px;"
+                 required>
+          <button type="submit" class="btn btn-xs btn-light border py-0.5 px-1.5 text-secondary shadow-2xs" style="height: 24px; font-size: 0.7rem;">Add</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <!-- Quick Add Checklist Button if no items exist -->
+    <div class="mb-2">
+      <button type="button" class="btn btn-xs btn-link text-muted p-0 text-decoration-none d-inline-flex align-items-center gap-1"
+              data-bs-toggle="collapse"
+              data-bs-target="#checklist-body-{{ task.pk }}"
+              style="font-size: 0.7rem;">
+        <i class="bi bi-list-check"></i>
+        <span>+ Add Checklist</span>
+      </button>
+      <div class="collapse task-checklist-body mt-1" id="checklist-body-{{ task.pk }}">
+        <div class="task-checklist-container">
+          <div class="checklist-items-list d-flex flex-column gap-1" id="checklist-items-{{ task.pk }}"></div>
+          <form class="d-flex align-items-center gap-1 checklist-add-form"
+                data-task-id="{{ task.pk }}"
+                data-add-url="{% url 'bookings:checklist_add' task.pk %}">
+            <input type="text"
+                   name="title"
+                   class="form-control form-control-xs py-0.5 px-1.5"
+                   placeholder="Enter first step..."
+                   style="font-size: 0.72rem; height: 24px; border-radius: 4px;"
+                   required>
+            <button type="submit" class="btn btn-xs btn-light border py-0.5 px-1.5 text-secondary shadow-2xs" style="height: 24px; font-size: 0.7rem;">Add</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Completed By Info Banner -->
+  {% if task.is_completed %}
+    <div class="task-completed-banner d-flex align-items-center gap-1.5 px-2 py-1 mb-2 rounded border" style="font-size: 0.72rem; background: #ecfdf5; border-color: #a7f3d0 !important; color: #065f46;">
+      <i class="bi bi-person-check-fill text-success flex-shrink-0"></i>
+      <span class="text-truncate">
+        Completed by <strong>{{ task.completed_by_name }}</strong>
+        {% if task.completed_at %}<span class="text-muted opacity-75">({{ task.completed_at|date:"M d, h:i A" }})</span>{% endif %}
+      </span>
+    </div>
+  {% else %}
+    <div class="task-completed-banner d-none align-items-center gap-1.5 px-2 py-1 mb-2 rounded border" style="font-size: 0.72rem; background: #ecfdf5; border-color: #a7f3d0 !important; color: #065f46;"></div>
+  {% endif %}
+
+  <!-- Card Footer: Assignee on Left + Tactile Action Button on Right -->
+  <div class="d-flex align-items-center justify-content-between pt-2 border-top border-light-subtle">
+    <!-- Assignee -->
+    <div class="d-flex align-items-center gap-1.5 text-truncate me-2" style="max-width: 140px;">
+      <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold flex-shrink-0"
+           style="width: 22px; height: 22px; font-size: 0.68rem; background: linear-gradient(135deg, #0ea5e9, #2563eb); box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+        {{ task.assigned_to.get_full_name|default:task.assigned_name|default:"U"|slice:":1"|upper }}
+      </div>
+      <span class="text-truncate fw-medium" style="font-size: 0.73rem; color: #475569;" title="{{ task.assigned_to.get_full_name|default:task.assigned_name|default:'Unassigned' }}">
+        {{ task.assigned_to.get_full_name|default:task.assigned_name|default:"Unassigned" }}
+      </span>
+    </div>
+
+    <!-- Action Buttons depending on status -->
+    <div class="d-flex align-items-center gap-1 card-actions-box">
+      {% if task.is_completed %}
+        <button type="button" class="btn btn-xs rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="IN_PROGRESS"
+                style="background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; font-size: 0.70rem; font-weight: 600;"
+                title="Move to In Progress">
+          <i class="bi bi-play-fill"></i><span>In Progress</span>
+        </button>
+        <button type="button" class="btn btn-xs rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="PENDING"
+                style="background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; font-size: 0.70rem; font-weight: 600;"
+                title="Reopen to To Do">
+          <i class="bi bi-arrow-counterclockwise"></i><span>Reopen</span>
+        </button>
+      {% elif task.status == 'IN_PROGRESS' %}
+        <button type="button" class="btn btn-xs rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="PENDING"
+                style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-size: 0.70rem; font-weight: 600;"
+                title="Move back to To Do">
+          <i class="bi bi-arrow-left"></i><span>To Do</span>
+        </button>
+        <button type="button" class="btn btn-xs rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="COMPLETED"
+                style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.70rem; font-weight: 600;"
+                title="Mark Completed">
+          <i class="bi bi-check2"></i><span>Done</span>
+        </button>
+      {% else %}
+        <button type="button" class="btn btn-xs rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="IN_PROGRESS"
+                style="background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; font-size: 0.70rem; font-weight: 600;"
+                title="Start working / In Progress">
+          <i class="bi bi-play-fill"></i><span>Start</span>
+        </button>
+        <button type="button" class="btn btn-xs rounded-pill px-2.5 py-1 d-inline-flex align-items-center gap-1 task-set-status-btn shadow-2xs"
+                data-task-id="{{ task.pk }}"
+                data-status="COMPLETED"
+                style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 0.70rem; font-weight: 600;"
+                title="Mark Completed">
+          <i class="bi bi-check2"></i><span>Done</span>
+        </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
